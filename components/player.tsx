@@ -5,12 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { NextIcon, PauseIcon, PlayIcon, PreviousIcon } from "@/components/icons";
 import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS } from "@/lib/tracks";
 
-const PLAYER_GLASS = "border border-[rgba(255,214,180,0.22)] bg-[rgba(42,28,24,0.72)] shadow-[0_22px_60px_rgba(24,12,8,0.38),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-[28px] backdrop-saturate-[1.6] [-webkit-backdrop-filter:blur(28px)_saturate(160%)]";
+const PLAYER_GLASS = "border border-white/[0.34] bg-[rgba(230,178,136,0.34)] shadow-[0_22px_60px_rgba(70,36,18,0.24),inset_0_1px_0_rgba(255,255,255,0.42),inset_0_-1px_0_rgba(120,60,25,0.12)] backdrop-blur-[30px] backdrop-saturate-[1.7] [-webkit-backdrop-filter:blur(30px)_saturate(170%)]";
 const CHIP_GLASS = "border border-white/25 bg-[rgba(161,111,103,0.48)] shadow-[0_8px_24px_rgba(60,32,24,0.16)] backdrop-blur-[18px]";
 
 type NowPlaying = {
   title: string;
-  artist: string;
+  channelName: string;
   videoId: string;
 };
 
@@ -50,7 +50,7 @@ function readNowPlaying(player: YouTubePlayer): NowPlaying {
   const data = player.getVideoData();
   return {
     title: data.title || "Pujo playlist",
-    artist: data.author || "YouTube playlist",
+    channelName: data.author || "YouTube Music",
     videoId: data.video_id || APPROVED_YOUTUBE_PLAYLIST.startVideoId,
   };
 }
@@ -58,11 +58,11 @@ function readNowPlaying(player: YouTubePlayer): NowPlaying {
 function TrackDetails({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-[15px] font-bold leading-tight tracking-normal text-white">
+      <p className="truncate text-[15px] font-bold leading-tight tracking-normal text-[#2f1a12]">
         {nowPlaying?.title ?? "Pujo Radio playlist"}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium leading-tight text-white/[0.68]">
-        {APPROVED_YOUTUBE_PLAYLIST.source}
+      <p className="mt-1 truncate text-[12px] font-medium leading-tight text-[rgba(47,26,18,0.68)]">
+        {nowPlaying?.channelName ?? "YouTube Music"}
       </p>
     </div>
   );
@@ -120,9 +120,9 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
         if (event.key === "ArrowLeft") onSeek(Math.max(0, currentTime - 5));
       }}
     >
-      <div className="relative h-1 w-full rounded-full bg-white/[0.18]">
+      <div className="relative h-1 w-full rounded-full bg-[rgba(47,26,18,0.16)]">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-white to-[#ffd6a0]"
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#fff4df] to-white"
           style={{ width: `${percent}%` }}
         />
         <span
@@ -144,33 +144,33 @@ type TransportProps = {
 
 function Transport({ isPlaying, disabled, onPrevious, onToggle, onNext }: TransportProps) {
   return (
-    <div className="flex shrink-0 items-center justify-center gap-2">
+    <div className="flex shrink-0 items-center justify-center gap-2.5">
       <button
         type="button"
         onClick={onPrevious}
         disabled={disabled}
         aria-label="Previous track"
-        className="grid size-[30px] place-items-center rounded-[10px] bg-white/[0.08] text-white/[0.78] transition hover:bg-white/[0.14] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        className="grid size-[34px] place-items-center rounded-xl bg-white/[0.22] text-[rgba(47,26,18,0.75)] transition hover:bg-white/[0.32] disabled:cursor-not-allowed disabled:opacity-30"
       >
-        <PreviousIcon className="size-[14px]" />
+        <PreviousIcon className="size-[17px]" />
       </button>
       <button
         type="button"
         onClick={onToggle}
         disabled={disabled}
         aria-label={isPlaying ? "Pause" : "Play"}
-        className="grid size-[46px] place-items-center rounded-[14px] border border-white/[0.16] bg-[#0f0f10] text-white shadow-[0_10px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+        className="grid size-12 place-items-center rounded-[15px] bg-[rgba(255,255,255,0.94)] text-[#2b1812] shadow-[0_10px_28px_rgba(49,25,14,0.22),inset_0_1px_0_rgba(255,255,255,0.9)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
       >
-        {isPlaying ? <PauseIcon className="size-[15px]" /> : <PlayIcon className="size-[15px] translate-x-px" />}
+        {isPlaying ? <PauseIcon className="size-[22px]" /> : <PlayIcon className="size-[23px] translate-x-px" />}
       </button>
       <button
         type="button"
         onClick={onNext}
         disabled={disabled}
         aria-label="Next track"
-        className="grid size-[30px] place-items-center rounded-[10px] bg-white/[0.08] text-white/[0.78] transition hover:bg-white/[0.14] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        className="grid size-[34px] place-items-center rounded-xl bg-white/[0.22] text-[rgba(47,26,18,0.75)] transition hover:bg-white/[0.32] disabled:cursor-not-allowed disabled:opacity-30"
       >
-        <NextIcon className="size-[14px]" />
+        <NextIcon className="size-[17px]" />
       </button>
     </div>
   );
@@ -181,13 +181,19 @@ function ArtworkSlot({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   const title = nowPlaying?.title ?? "Pujo Radio playlist";
 
   return (
-    <div className="relative size-14 shrink-0 overflow-hidden rounded-[14px] bg-[#1a1110]/60 sm:size-16">
+    <div className="relative size-[66px] shrink-0 overflow-hidden rounded-2xl bg-white/[0.18]">
       <img
-        src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+        src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
         alt={`${title} thumbnail`}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-cover object-center"
+        onError={(event) => {
+          const image = event.currentTarget;
+          if (image.dataset.fallbackApplied) return;
+          image.dataset.fallbackApplied = "true";
+          image.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-white/[0.04]" />
+      <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/[0.18]" />
     </div>
   );
 }
@@ -206,14 +212,14 @@ type PlayerCardProps = {
 
 function PlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
   return (
-    <div className={`${PLAYER_GLASS} grid min-h-[92px] grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[24px] px-4 py-[14px] sm:min-h-[96px] sm:grid-cols-[64px_minmax(0,1fr)_auto]`}>
+    <div className={`${PLAYER_GLASS} grid min-h-[104px] grid-cols-[66px_minmax(0,1fr)_auto] items-center gap-4 rounded-[26px] px-[18px] py-[15px]`}>
       <ArtworkSlot nowPlaying={nowPlaying} />
       <div className="min-w-0">
         <TrackDetails nowPlaying={nowPlaying} />
         <div className="mt-2">
           <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
         </div>
-        <div className="mt-[5px] flex justify-between text-[10px] font-medium tabular-nums text-white/[0.62]">
+        <div className="mt-[5px] flex justify-between text-[10px] font-semibold tabular-nums text-[rgba(47,26,18,0.62)]">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
