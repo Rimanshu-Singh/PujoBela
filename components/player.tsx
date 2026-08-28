@@ -55,21 +55,6 @@ function readNowPlaying(player: YouTubePlayer): NowPlaying {
   };
 }
 
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(min-width: 640px)");
-    const update = () => setIsDesktop(media.matches);
-
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  return isDesktop;
-}
-
 function TrackDetails({ nowPlaying, compact = false }: { nowPlaying: NowPlaying | null; compact?: boolean }) {
   return (
     <div className="min-w-0">
@@ -77,7 +62,7 @@ function TrackDetails({ nowPlaying, compact = false }: { nowPlaying: NowPlaying 
         {nowPlaying?.title ?? "Pujo Radio playlist"}
       </p>
       <p className={`${compact ? "text-[12px]" : "text-[13px]"} mt-1 truncate text-white/[0.72]`}>
-        {nowPlaying?.artist ?? "Approved YouTube playlist"}
+        {APPROVED_YOUTUBE_PLAYLIST.source}
       </p>
     </div>
   );
@@ -191,25 +176,18 @@ function Transport({ isPlaying, disabled, onPrevious, onToggle, onNext }: Transp
   );
 }
 
-function ArtworkSlot({ hostRef, hasPlaylist, compact = false }: { hostRef: React.RefObject<HTMLDivElement | null>; hasPlaylist: boolean; compact?: boolean }) {
+function ArtworkSlot({ nowPlaying, compact = false }: { nowPlaying: NowPlaying | null; compact?: boolean }) {
+  const videoId = nowPlaying?.videoId ?? APPROVED_YOUTUBE_PLAYLIST.startVideoId;
+  const title = nowPlaying?.title ?? "Pujo Radio playlist";
+
   return (
     <div className={`relative shrink-0 overflow-hidden rounded-[16px] border border-white/[0.18] bg-[#351309]/55 shadow-inner ${compact ? "aspect-video w-full" : "aspect-video w-[150px]"}`}>
-      {hasPlaylist ? (
-        <div ref={hostRef} className="absolute inset-0 [&>iframe]:h-full [&>iframe]:w-full" />
-      ) : (
-        <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_30%_20%,rgba(255,198,103,0.32),transparent_36%),linear-gradient(135deg,rgba(62,22,8,0.88),rgba(160,66,22,0.58))]">
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-pujo-light">Pujo</p>
-            <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/65">Radio</p>
-          </div>
-        </div>
-      )}
+      <img
+        src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+        alt={`${title} thumbnail`}
+        className="h-full w-full object-cover"
+      />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/12 via-transparent to-white/10" />
-      {hasPlaylist && (
-        <div className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/35 px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/[0.72] backdrop-blur-sm">
-          YouTube
-        </div>
-      )}
     </div>
   );
 }
@@ -217,7 +195,6 @@ function ArtworkSlot({ hostRef, hasPlaylist, compact = false }: { hostRef: React
 type PlayerCardProps = {
   currentTime: number;
   duration: number;
-  hostRef: React.RefObject<HTMLDivElement | null>;
   isPlaying: boolean;
   isReady: boolean;
   nowPlaying: NowPlaying | null;
@@ -227,10 +204,10 @@ type PlayerCardProps = {
   onToggle: () => void;
 };
 
-function DesktopPlayerCard({ currentTime, duration, hostRef, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
+function DesktopPlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
   return (
     <div className={`${PLAYER_GLASS} hidden h-[116px] items-center gap-5 rounded-[22px] p-3 pr-5 sm:flex`}>
-      <ArtworkSlot hostRef={hostRef} hasPlaylist />
+      <ArtworkSlot nowPlaying={nowPlaying} />
       <div className="min-w-0 flex-1">
         <TrackDetails nowPlaying={nowPlaying} />
         <div className="mt-2">
@@ -246,11 +223,11 @@ function DesktopPlayerCard({ currentTime, duration, hostRef, isPlaying, isReady,
   );
 }
 
-function MobilePlayerCard({ currentTime, duration, hostRef, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
+function MobilePlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
   return (
     <div className={`${PLAYER_GLASS} rounded-[22px] p-3 sm:hidden`}>
       <div className="grid gap-3">
-        <ArtworkSlot hostRef={hostRef} hasPlaylist compact />
+        <ArtworkSlot nowPlaying={nowPlaying} compact />
         <TrackDetails nowPlaying={nowPlaying} compact />
       </div>
       <div className="mt-2">
@@ -296,9 +273,9 @@ export function Player() {
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const isDesktop = useIsDesktop();
   const playerRef = useRef<YouTubePlayer | null>(null);
   const playerHostRef = useRef<HTMLDivElement | null>(null);
+  const playlistLoadedRef = useRef(false);
   const nowPlayingRef = useRef<NowPlaying | null>(null);
   const shouldResumeRef = useRef(false);
 
@@ -355,16 +332,17 @@ export function Player() {
     setNowPlaying(null);
     setCurrentTime(0);
     setDuration(0);
+    playlistLoadedRef.current = false;
 
     loadYouTubeApi().then(() => {
       if (cancelled || !window.YT || !playerHostRef.current) return;
 
       instance = new window.YT.Player(playerHostRef.current, {
         videoId: APPROVED_YOUTUBE_PLAYLIST.startVideoId,
-        width: "100%",
-        height: "100%",
+        width: 0,
+        height: 0,
         playerVars: {
-          index: 0,
+          index: APPROVED_YOUTUBE_PLAYLIST.startIndex,
           list: APPROVED_YOUTUBE_PLAYLIST.id,
           listType: "playlist",
           modestbranding: 1,
@@ -374,7 +352,11 @@ export function Player() {
         events: {
           onReady: ({ target }) => {
             playerRef.current = target;
-            target.cuePlaylist({ list: APPROVED_YOUTUBE_PLAYLIST.id, listType: "playlist", index: 0 });
+            target.cuePlaylist({
+              listType: "playlist",
+              list: APPROVED_YOUTUBE_PLAYLIST.id,
+              index: APPROVED_YOUTUBE_PLAYLIST.startIndex,
+            });
             setIsReady(true);
             window.setTimeout(syncFromPlayer, 250);
           },
@@ -398,9 +380,10 @@ export function Player() {
             const videoId = target.getVideoData().video_id || nowPlayingRef.current?.videoId || APPROVED_YOUTUBE_PLAYLIST.startVideoId;
             setIsPlaying(false);
             trackEvent("youtube_playlist_error", { code: data, videoId, playlistId: APPROVED_YOUTUBE_PLAYLIST.id });
-            shouldResumeRef.current = true;
+            const shouldContinue = shouldResumeRef.current;
             target.nextVideo();
-            playAfterQueueMove();
+            if (shouldContinue) playAfterQueueMove();
+            else window.setTimeout(syncFromPlayer, 250);
           },
         },
       });
@@ -411,7 +394,7 @@ export function Player() {
       if (playerRef.current === instance) playerRef.current = null;
       instance?.destroy();
     };
-  }, [isDesktop, playAfterQueueMove, syncFromPlayer]);
+  }, [playAfterQueueMove, syncFromPlayer]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -432,7 +415,16 @@ export function Player() {
       player.pauseVideo();
     } else {
       shouldResumeRef.current = true;
-      player.playVideo();
+      if (!playlistLoadedRef.current) {
+        playlistLoadedRef.current = true;
+        player.loadPlaylist({
+          listType: "playlist",
+          list: APPROVED_YOUTUBE_PLAYLIST.id,
+          index: APPROVED_YOUTUBE_PLAYLIST.startIndex,
+        });
+      } else {
+        player.playVideo();
+      }
     }
   };
 
@@ -445,38 +437,37 @@ export function Player() {
 
   return (
     <div className="pointer-events-auto w-full">
+      <div className="pointer-events-none absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden" aria-hidden="true">
+        <div ref={playerHostRef} />
+      </div>
+
       <div className="mb-3 text-center drop-shadow-sm">
         <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-pujo-light/95">{playlist.eyebrow}</p>
       </div>
 
       <PlaylistChips activeIndex={playlistIndex} onChange={switchPlaylist} />
-      {isDesktop ? (
-        <DesktopPlayerCard
-          currentTime={currentTime}
-          duration={duration}
-          hostRef={playerHostRef}
-          isPlaying={isPlaying}
-          isReady={isReady}
-          nowPlaying={nowPlaying}
-          onPrevious={previous}
-          onToggle={togglePlayback}
-          onNext={next}
-          onSeek={seek}
-        />
-      ) : (
-        <MobilePlayerCard
-          currentTime={currentTime}
-          duration={duration}
-          hostRef={playerHostRef}
-          isPlaying={isPlaying}
-          isReady={isReady}
-          nowPlaying={nowPlaying}
-          onPrevious={previous}
-          onToggle={togglePlayback}
-          onNext={next}
-          onSeek={seek}
-        />
-      )}
+      <DesktopPlayerCard
+        currentTime={currentTime}
+        duration={duration}
+        isPlaying={isPlaying}
+        isReady={isReady}
+        nowPlaying={nowPlaying}
+        onPrevious={previous}
+        onToggle={togglePlayback}
+        onNext={next}
+        onSeek={seek}
+      />
+      <MobilePlayerCard
+        currentTime={currentTime}
+        duration={duration}
+        isPlaying={isPlaying}
+        isReady={isReady}
+        nowPlaying={nowPlaying}
+        onPrevious={previous}
+        onToggle={togglePlayback}
+        onNext={next}
+        onSeek={seek}
+      />
     </div>
   );
 }

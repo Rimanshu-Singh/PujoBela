@@ -16,9 +16,10 @@ export type Playlist = {
 };
 
 export const APPROVED_YOUTUBE_PLAYLIST = {
-  id: "PLEWEj5NdvUqJeYfSDC4jJQXGgw92vNb6k",
-  url: "https://www.youtube.com/watch?v=E2zfQEo7Q_M&list=PLEWEj5NdvUqJeYfSDC4jJQXGgw92vNb6k",
-  startVideoId: "E2zfQEo7Q_M",
+  id: "PLjzw5oKNnEDckdihqypaNh_Q0OzDs_7D3",
+  startVideoId: "SFJeglBF5cg",
+  startIndex: 2,
+  source: "approved YouTube playlist",
 };
 
 // Add a rights-cleared song with one line inside the appropriate `tracks` array:
