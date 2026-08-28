@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { NextIcon, PauseIcon, PlayIcon, PreviousIcon } from "@/components/icons";
 import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS } from "@/lib/tracks";
 
-const PLAYER_GLASS = "border border-white/25 bg-[linear-gradient(135deg,rgba(104,42,14,0.42),rgba(226,128,49,0.22)_48%,rgba(72,28,10,0.34))] shadow-[0_18px_44px_-18px_rgba(54,20,4,0.58),inset_0_1px_0_rgba(255,255,255,0.24)] backdrop-blur-3xl backdrop-saturate-[1.55]";
-const CHIP_GLASS = "border border-white/25 bg-[linear-gradient(135deg,rgba(124,50,16,0.34),rgba(255,173,88,0.16))] shadow-[0_8px_24px_rgba(54,20,4,0.14)] backdrop-blur-2xl";
+const PLAYER_GLASS = "border border-white/[0.22] bg-[rgba(161,111,103,0.72)] shadow-[0_18px_45px_rgba(60,32,24,0.24)] backdrop-blur-[18px]";
+const CHIP_GLASS = "border border-white/25 bg-[rgba(161,111,103,0.48)] shadow-[0_8px_24px_rgba(60,32,24,0.16)] backdrop-blur-[18px]";
 
 type NowPlaying = {
   title: string;
@@ -55,13 +55,13 @@ function readNowPlaying(player: YouTubePlayer): NowPlaying {
   };
 }
 
-function TrackDetails({ nowPlaying, compact = false }: { nowPlaying: NowPlaying | null; compact?: boolean }) {
+function TrackDetails({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   return (
     <div className="min-w-0">
-      <p className={`${compact ? "text-[14px]" : "text-[16px]"} truncate font-semibold tracking-normal text-white`}>
+      <p className="truncate text-[12px] font-bold leading-tight tracking-normal text-white">
         {nowPlaying?.title ?? "Pujo Radio playlist"}
       </p>
-      <p className={`${compact ? "text-[12px]" : "text-[13px]"} mt-1 truncate text-white/[0.72]`}>
+      <p className="mt-0.5 truncate text-[10px] font-medium leading-tight text-[#fff2e8]/75">
         {APPROVED_YOUTUBE_PLAYLIST.source}
       </p>
     </div>
@@ -111,7 +111,7 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
       aria-valuenow={Math.round(currentTime)}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
-      className={`group flex h-6 w-full touch-none items-center ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
+      className={`group flex h-4 w-full touch-none items-center ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onKeyDown={(event) => {
@@ -120,13 +120,13 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
         if (event.key === "ArrowLeft") onSeek(Math.max(0, currentTime - 5));
       }}
     >
-      <div className="relative h-[4px] w-full rounded-full bg-white/[0.18]">
+      <div className="relative h-[2px] w-full rounded-full bg-white/[0.55]">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-pujo-light shadow-[0_0_10px_rgba(255,190,86,0.7)]"
+          className="absolute inset-y-0 left-0 rounded-full bg-white"
           style={{ width: `${percent}%` }}
         />
         <span
-          className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white opacity-0 shadow-[0_0_8px_rgba(255,190,86,0.9)] transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
           style={{ left: `${percent}%` }}
         />
       </div>
@@ -144,50 +144,50 @@ type TransportProps = {
 
 function Transport({ isPlaying, disabled, onPrevious, onToggle, onNext }: TransportProps) {
   return (
-    <div className="flex shrink-0 items-center justify-center gap-1.5">
+    <div className="flex shrink-0 items-center justify-center gap-1">
       <button
         type="button"
         onClick={onPrevious}
         disabled={disabled}
         aria-label="Previous track"
-        className="grid size-11 place-items-center rounded-full text-white/[0.78] transition hover:bg-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        className="grid size-7 place-items-center rounded-full text-white/85 transition hover:bg-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
       >
-        <PreviousIcon className="size-4" />
+        <PreviousIcon className="size-[14px]" />
       </button>
       <button
         type="button"
         onClick={onToggle}
         disabled={disabled}
         aria-label={isPlaying ? "Pause" : "Play"}
-        className="grid size-[52px] place-items-center rounded-full bg-gradient-to-b from-pujo-light to-pujo text-[#3b1d08] ring-1 ring-white/25 drop-shadow-[0_8px_16px_rgba(244,165,58,0.38)] transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-45"
+        className="grid size-[34px] place-items-center rounded-full bg-white text-[#6f4a43] shadow-[0_6px_14px_rgba(60,32,24,0.18)] transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
       >
-        {isPlaying ? <PauseIcon className="size-[18px]" /> : <PlayIcon className="ml-0.5 size-[19px]" />}
+        {isPlaying ? <PauseIcon className="size-[13px]" /> : <PlayIcon className="ml-0.5 size-[14px]" />}
       </button>
       <button
         type="button"
         onClick={onNext}
         disabled={disabled}
         aria-label="Next track"
-        className="grid size-11 place-items-center rounded-full text-white/[0.78] transition hover:bg-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        className="grid size-7 place-items-center rounded-full text-white/85 transition hover:bg-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
       >
-        <NextIcon className="size-4" />
+        <NextIcon className="size-[14px]" />
       </button>
     </div>
   );
 }
 
-function ArtworkSlot({ nowPlaying, compact = false }: { nowPlaying: NowPlaying | null; compact?: boolean }) {
+function ArtworkSlot({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   const videoId = nowPlaying?.videoId ?? APPROVED_YOUTUBE_PLAYLIST.startVideoId;
   const title = nowPlaying?.title ?? "Pujo Radio playlist";
 
   return (
-    <div className={`relative shrink-0 overflow-hidden rounded-[16px] border border-white/[0.18] bg-[#351309]/55 shadow-inner ${compact ? "aspect-video w-full" : "aspect-video w-[150px]"}`}>
+    <div className="relative size-[46px] shrink-0 overflow-hidden rounded-lg bg-[#7b514b]/40">
       <img
         src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
         alt={`${title} thumbnail`}
         className="h-full w-full object-cover"
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/12 via-transparent to-white/10" />
+      <div className="pointer-events-none absolute inset-0 bg-white/[0.04]" />
     </div>
   );
 }
@@ -204,43 +204,21 @@ type PlayerCardProps = {
   onToggle: () => void;
 };
 
-function DesktopPlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
+function PlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
   return (
-    <div className={`${PLAYER_GLASS} hidden h-[116px] items-center gap-5 rounded-[22px] p-3 pr-5 sm:flex`}>
+    <div className={`${PLAYER_GLASS} flex h-auto min-h-[74px] items-center gap-3 rounded-[18px] px-3 py-3 sm:h-[74px] sm:py-0 sm:pr-3.5`}>
       <ArtworkSlot nowPlaying={nowPlaying} />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 pt-0.5">
         <TrackDetails nowPlaying={nowPlaying} />
-        <div className="mt-2">
+        <div className="mt-1.5">
           <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
         </div>
-        <div className="-mt-1 flex justify-between text-[10.5px] font-medium tabular-nums text-white/[0.62]">
+        <div className="-mt-0.5 flex justify-between text-[9px] font-medium tabular-nums text-white/80">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
       </div>
       <Transport isPlaying={isPlaying} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
-    </div>
-  );
-}
-
-function MobilePlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
-  return (
-    <div className={`${PLAYER_GLASS} rounded-[22px] p-3 sm:hidden`}>
-      <div className="grid gap-3">
-        <ArtworkSlot nowPlaying={nowPlaying} compact />
-        <TrackDetails nowPlaying={nowPlaying} compact />
-      </div>
-      <div className="mt-2">
-        <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
-      </div>
-      <div className="relative -mt-0.5 flex min-h-13 items-center justify-center">
-        <div className="absolute left-0 flex gap-1 text-[10.5px] font-medium tabular-nums text-white/60">
-          <span>{formatTime(currentTime)}</span>
-          <span className="text-white/30">/</span>
-          <span>{formatTime(duration)}</span>
-        </div>
-        <Transport isPlaying={isPlaying} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
-      </div>
     </div>
   );
 }
@@ -446,18 +424,7 @@ export function Player() {
       </div>
 
       <PlaylistChips activeIndex={playlistIndex} onChange={switchPlaylist} />
-      <DesktopPlayerCard
-        currentTime={currentTime}
-        duration={duration}
-        isPlaying={isPlaying}
-        isReady={isReady}
-        nowPlaying={nowPlaying}
-        onPrevious={previous}
-        onToggle={togglePlayback}
-        onNext={next}
-        onSeek={seek}
-      />
-      <MobilePlayerCard
+      <PlayerCard
         currentTime={currentTime}
         duration={duration}
         isPlaying={isPlaying}
