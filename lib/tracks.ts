@@ -15,6 +15,12 @@ export type Playlist = {
   tracks: Track[];
 };
 
+export const APPROVED_YOUTUBE_PLAYLIST = {
+  id: "PLEWEj5NdvUqJeYfSDC4jJQXGgw92vNb6k",
+  url: "https://www.youtube.com/watch?v=E2zfQEo7Q_M&list=PLEWEj5NdvUqJeYfSDC4jJQXGgw92vNb6k",
+  startVideoId: "E2zfQEo7Q_M",
+};
+
 // Add a rights-cleared song with one line inside the appropriate `tracks` array:
 // { id: "unique-id", title: "Song", artist: "Artist", film: "Film", year: 1972, duration: 184, videoId: "RIGHTS_HOLDER_VIDEO_ID" },
 export const PLAYLISTS: Playlist[] = [

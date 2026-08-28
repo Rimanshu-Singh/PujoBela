@@ -3,10 +3,16 @@
 import { track as trackEvent } from "@vercel/analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NextIcon, PauseIcon, PlayIcon, PreviousIcon } from "@/components/icons";
-import { PLAYLISTS, type Track } from "@/lib/tracks";
+import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS } from "@/lib/tracks";
 
 const PLAYER_GLASS = "border border-white/25 bg-[linear-gradient(135deg,rgba(104,42,14,0.42),rgba(226,128,49,0.22)_48%,rgba(72,28,10,0.34))] shadow-[0_18px_44px_-18px_rgba(54,20,4,0.58),inset_0_1px_0_rgba(255,255,255,0.24)] backdrop-blur-3xl backdrop-saturate-[1.55]";
 const CHIP_GLASS = "border border-white/25 bg-[linear-gradient(135deg,rgba(124,50,16,0.34),rgba(255,173,88,0.16))] shadow-[0_8px_24px_rgba(54,20,4,0.14)] backdrop-blur-2xl";
+
+type NowPlaying = {
+  title: string;
+  artist: string;
+  videoId: string;
+};
 
 let youtubeApiPromise: Promise<void> | null = null;
 
@@ -40,6 +46,15 @@ function formatTime(seconds: number) {
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
 }
 
+function readNowPlaying(player: YouTubePlayer): NowPlaying {
+  const data = player.getVideoData();
+  return {
+    title: data.title || "Pujo playlist",
+    artist: data.author || "YouTube playlist",
+    videoId: data.video_id || APPROVED_YOUTUBE_PLAYLIST.startVideoId,
+  };
+}
+
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -55,14 +70,14 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-function TrackDetails({ track, compact = false }: { track: Track | null; compact?: boolean }) {
+function TrackDetails({ nowPlaying, compact = false }: { nowPlaying: NowPlaying | null; compact?: boolean }) {
   return (
     <div className="min-w-0">
       <p className={`${compact ? "text-[14px]" : "text-[16px]"} truncate font-semibold tracking-normal text-white`}>
-        {track?.title ?? "Your Pujo songs belong here"}
+        {nowPlaying?.title ?? "Pujo Radio playlist"}
       </p>
       <p className={`${compact ? "text-[12px]" : "text-[13px]"} mt-1 truncate text-white/[0.72]`}>
-        {track ? `${track.artist} - ${track.film}, ${track.year}` : "Add a rights-cleared YouTube upload"}
+        {nowPlaying?.artist ?? "Approved YouTube playlist"}
       </p>
     </div>
   );
@@ -176,10 +191,10 @@ function Transport({ isPlaying, disabled, onPrevious, onToggle, onNext }: Transp
   );
 }
 
-function ArtworkSlot({ hostRef, track, compact = false }: { hostRef: React.RefObject<HTMLDivElement | null>; track: Track | null; compact?: boolean }) {
+function ArtworkSlot({ hostRef, hasPlaylist, compact = false }: { hostRef: React.RefObject<HTMLDivElement | null>; hasPlaylist: boolean; compact?: boolean }) {
   return (
     <div className={`relative shrink-0 overflow-hidden rounded-[16px] border border-white/[0.18] bg-[#351309]/55 shadow-inner ${compact ? "aspect-video w-full" : "aspect-video w-[150px]"}`}>
-      {track ? (
+      {hasPlaylist ? (
         <div ref={hostRef} className="absolute inset-0 [&>iframe]:h-full [&>iframe]:w-full" />
       ) : (
         <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_30%_20%,rgba(255,198,103,0.32),transparent_36%),linear-gradient(135deg,rgba(62,22,8,0.88),rgba(160,66,22,0.58))]">
@@ -190,7 +205,7 @@ function ArtworkSlot({ hostRef, track, compact = false }: { hostRef: React.RefOb
         </div>
       )}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/12 via-transparent to-white/10" />
-      {track && (
+      {hasPlaylist && (
         <div className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/35 px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/[0.72] backdrop-blur-sm">
           YouTube
         </div>
@@ -200,53 +215,54 @@ function ArtworkSlot({ hostRef, track, compact = false }: { hostRef: React.RefOb
 }
 
 type PlayerCardProps = {
-  currentTrack: Track | null;
   currentTime: number;
   duration: number;
   hostRef: React.RefObject<HTMLDivElement | null>;
   isPlaying: boolean;
+  isReady: boolean;
+  nowPlaying: NowPlaying | null;
   onNext: () => void;
   onPrevious: () => void;
   onSeek: (time: number) => void;
   onToggle: () => void;
 };
 
-function DesktopPlayerCard({ currentTrack, currentTime, duration, hostRef, isPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
+function DesktopPlayerCard({ currentTime, duration, hostRef, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
   return (
     <div className={`${PLAYER_GLASS} hidden h-[116px] items-center gap-5 rounded-[22px] p-3 pr-5 sm:flex`}>
-      <ArtworkSlot hostRef={hostRef} track={currentTrack} />
+      <ArtworkSlot hostRef={hostRef} hasPlaylist />
       <div className="min-w-0 flex-1">
-        <TrackDetails track={currentTrack} />
+        <TrackDetails nowPlaying={nowPlaying} />
         <div className="mt-2">
-          <SeekBar currentTime={currentTime} duration={duration || currentTrack?.duration || 0} onSeek={onSeek} disabled={!currentTrack} />
+          <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
         </div>
         <div className="-mt-1 flex justify-between text-[10.5px] font-medium tabular-nums text-white/[0.62]">
           <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration || currentTrack?.duration || 0)}</span>
+          <span>{formatTime(duration)}</span>
         </div>
       </div>
-      <Transport isPlaying={isPlaying} disabled={!currentTrack} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
+      <Transport isPlaying={isPlaying} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
     </div>
   );
 }
 
-function MobilePlayerCard({ currentTrack, currentTime, duration, hostRef, isPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
+function MobilePlayerCard({ currentTime, duration, hostRef, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
   return (
     <div className={`${PLAYER_GLASS} rounded-[22px] p-3 sm:hidden`}>
       <div className="grid gap-3">
-        <ArtworkSlot hostRef={hostRef} track={currentTrack} compact />
-        <TrackDetails track={currentTrack} compact />
+        <ArtworkSlot hostRef={hostRef} hasPlaylist compact />
+        <TrackDetails nowPlaying={nowPlaying} compact />
       </div>
       <div className="mt-2">
-        <SeekBar currentTime={currentTime} duration={duration || currentTrack?.duration || 0} onSeek={onSeek} disabled={!currentTrack} />
+        <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
       </div>
       <div className="relative -mt-0.5 flex min-h-13 items-center justify-center">
         <div className="absolute left-0 flex gap-1 text-[10.5px] font-medium tabular-nums text-white/60">
           <span>{formatTime(currentTime)}</span>
           <span className="text-white/30">/</span>
-          <span>{formatTime(duration || currentTrack?.duration || 0)}</span>
+          <span>{formatTime(duration)}</span>
         </div>
-        <Transport isPlaying={isPlaying} disabled={!currentTrack} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
+        <Transport isPlaying={isPlaying} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
       </div>
     </div>
   );
@@ -275,74 +291,116 @@ function PlaylistChips({ activeIndex, onChange }: { activeIndex: number; onChang
 
 export function Player() {
   const [playlistIndex, setPlaylistIndex] = useState(0);
-  const [trackIndex, setTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const isDesktop = useIsDesktop();
   const playerRef = useRef<YouTubePlayer | null>(null);
   const playerHostRef = useRef<HTMLDivElement | null>(null);
-  const advanceRef = useRef<() => void>(() => undefined);
+  const nowPlayingRef = useRef<NowPlaying | null>(null);
+  const shouldResumeRef = useRef(false);
 
-  const playlist = PLAYLISTS[playlistIndex];
-  const currentTrack = playlist.tracks[trackIndex] ?? null;
+  const syncFromPlayer = useCallback(() => {
+    const player = playerRef.current;
+    if (!player) return;
+
+    const nextNowPlaying = readNowPlaying(player);
+    nowPlayingRef.current = nextNowPlaying;
+    setNowPlaying(nextNowPlaying);
+    setCurrentTime(player.getCurrentTime() || 0);
+    setDuration(player.getDuration() || 0);
+  }, []);
+
+  const playAfterQueueMove = useCallback(() => {
+    window.setTimeout(() => {
+      syncFromPlayer();
+      if (shouldResumeRef.current) playerRef.current?.playVideo();
+    }, 250);
+  }, [syncFromPlayer]);
 
   const next = useCallback(() => {
-    if (!playlist.tracks.length) return;
-    setTrackIndex((index) => (index + 1) % playlist.tracks.length);
+    const player = playerRef.current;
+    if (!player) return;
+
+    shouldResumeRef.current = isPlaying;
+    player.nextVideo();
     setCurrentTime(0);
-    setIsPlaying(false);
-  }, [playlist.tracks.length]);
+    playAfterQueueMove();
+  }, [isPlaying, playAfterQueueMove]);
 
   const previous = useCallback(() => {
-    if (!playlist.tracks.length) return;
+    const player = playerRef.current;
+    if (!player) return;
+
     if (currentTime > 4) {
-      playerRef.current?.seekTo(0, true);
+      player.seekTo(0, true);
       setCurrentTime(0);
       return;
     }
-    setTrackIndex((index) => (index - 1 + playlist.tracks.length) % playlist.tracks.length);
+
+    shouldResumeRef.current = isPlaying;
+    player.previousVideo();
     setCurrentTime(0);
-    setIsPlaying(false);
-  }, [currentTime, playlist.tracks.length]);
+    playAfterQueueMove();
+  }, [currentTime, isPlaying, playAfterQueueMove]);
 
   useEffect(() => {
-    advanceRef.current = next;
-  }, [next]);
-
-  useEffect(() => {
-    if (!currentTrack || !playerHostRef.current) return;
+    if (!playerHostRef.current) return;
     let cancelled = false;
     let instance: YouTubePlayer | null = null;
 
+    setIsReady(false);
+    setNowPlaying(null);
+    setCurrentTime(0);
+    setDuration(0);
+
     loadYouTubeApi().then(() => {
       if (cancelled || !window.YT || !playerHostRef.current) return;
+
       instance = new window.YT.Player(playerHostRef.current, {
-        videoId: currentTrack.videoId,
+        videoId: APPROVED_YOUTUBE_PLAYLIST.startVideoId,
         width: "100%",
         height: "100%",
-        playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+        playerVars: {
+          index: 0,
+          list: APPROVED_YOUTUBE_PLAYLIST.id,
+          listType: "playlist",
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+        },
         events: {
           onReady: ({ target }) => {
             playerRef.current = target;
-            const videoDuration = target.getDuration();
-            setDuration(videoDuration || currentTrack.duration);
+            target.cuePlaylist({ list: APPROVED_YOUTUBE_PLAYLIST.id, listType: "playlist", index: 0 });
+            setIsReady(true);
+            window.setTimeout(syncFromPlayer, 250);
           },
           onStateChange: ({ data, target }) => {
+            syncFromPlayer();
             if (data === 1) {
+              shouldResumeRef.current = true;
               setIsPlaying(true);
-              setDuration(target.getDuration() || currentTrack.duration);
+              setDuration(target.getDuration() || 0);
             } else if (data === 2) {
+              shouldResumeRef.current = false;
               setIsPlaying(false);
             } else if (data === 0) {
               setIsPlaying(false);
-              advanceRef.current();
+              shouldResumeRef.current = true;
+              target.nextVideo();
+              playAfterQueueMove();
             }
           },
-          onError: ({ data }) => {
+          onError: ({ data, target }) => {
+            const videoId = target.getVideoData().video_id || nowPlayingRef.current?.videoId || APPROVED_YOUTUBE_PLAYLIST.startVideoId;
             setIsPlaying(false);
-            trackEvent("youtube_player_error", { code: data, videoId: currentTrack.videoId });
-            advanceRef.current();
+            trackEvent("youtube_playlist_error", { code: data, videoId, playlistId: APPROVED_YOUTUBE_PLAYLIST.id });
+            shouldResumeRef.current = true;
+            target.nextVideo();
+            playAfterQueueMove();
           },
         },
       });
@@ -353,40 +411,37 @@ export function Player() {
       if (playerRef.current === instance) playerRef.current = null;
       instance?.destroy();
     };
-  }, [currentTrack]);
+  }, [isDesktop, playAfterQueueMove, syncFromPlayer]);
 
   useEffect(() => {
     if (!isPlaying) return;
-    const timer = window.setInterval(() => {
-      const player = playerRef.current;
-      if (!player) return;
-      setCurrentTime(player.getCurrentTime() || 0);
-      setDuration(player.getDuration() || currentTrack?.duration || 0);
-    }, 400);
+    const timer = window.setInterval(syncFromPlayer, 400);
     return () => window.clearInterval(timer);
-  }, [isPlaying, currentTrack?.duration]);
+  }, [isPlaying, syncFromPlayer]);
 
   const switchPlaylist = (index: number) => {
-    if (index === playlistIndex) return;
-    playerRef.current?.pauseVideo();
     setPlaylistIndex(index);
-    setTrackIndex(0);
-    setCurrentTime(0);
-    setDuration(0);
-    setIsPlaying(false);
   };
 
   const togglePlayback = () => {
     const player = playerRef.current;
     if (!player) return;
-    if (isPlaying) player.pauseVideo();
-    else player.playVideo();
+
+    if (isPlaying) {
+      shouldResumeRef.current = false;
+      player.pauseVideo();
+    } else {
+      shouldResumeRef.current = true;
+      player.playVideo();
+    }
   };
 
   const seek = useCallback((time: number) => {
     playerRef.current?.seekTo(time, true);
     setCurrentTime(time);
   }, []);
+
+  const playlist = PLAYLISTS[playlistIndex];
 
   return (
     <div className="pointer-events-auto w-full">
@@ -397,11 +452,12 @@ export function Player() {
       <PlaylistChips activeIndex={playlistIndex} onChange={switchPlaylist} />
       {isDesktop ? (
         <DesktopPlayerCard
-          currentTrack={currentTrack}
           currentTime={currentTime}
           duration={duration}
           hostRef={playerHostRef}
           isPlaying={isPlaying}
+          isReady={isReady}
+          nowPlaying={nowPlaying}
           onPrevious={previous}
           onToggle={togglePlayback}
           onNext={next}
@@ -409,11 +465,12 @@ export function Player() {
         />
       ) : (
         <MobilePlayerCard
-          currentTrack={currentTrack}
           currentTime={currentTime}
           duration={duration}
           hostRef={playerHostRef}
           isPlaying={isPlaying}
+          isReady={isReady}
+          nowPlaying={nowPlaying}
           onPrevious={previous}
           onToggle={togglePlayback}
           onNext={next}

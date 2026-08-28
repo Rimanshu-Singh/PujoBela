@@ -12,16 +12,21 @@ declare global {
   interface YouTubePlayer {
     playVideo(): void;
     pauseVideo(): void;
+    nextVideo(): void;
+    previousVideo(): void;
     seekTo(seconds: number, allowSeekAhead: boolean): void;
+    cuePlaylist(options: { list: string; listType: "playlist"; index?: number; startSeconds?: number }): void;
+    loadPlaylist(options: { list: string; listType: "playlist"; index?: number; startSeconds?: number }): void;
     loadVideoById(videoId: string): void;
     cueVideoById(videoId: string): void;
     getCurrentTime(): number;
     getDuration(): number;
+    getVideoData(): { video_id?: string; title?: string; author?: string };
     destroy(): void;
   }
 
   interface YouTubePlayerOptions {
-    videoId: string;
+    videoId?: string;
     width?: string | number;
     height?: string | number;
     playerVars?: Record<string, string | number>;
