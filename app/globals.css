@@ -65,6 +65,46 @@ a:focus-visible,
   animation: blink 1s steps(1, end) infinite;
 }
 
+.creator-backdrop {
+  animation: creator-backdrop-in 220ms ease-out both;
+}
+
+.creator-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background:
+    radial-gradient(circle at top left, rgb(255 196 120 / 0.22), transparent 34%),
+    linear-gradient(135deg, rgb(62 42 34 / 0.82), rgb(36 24 21 / 0.78));
+  box-shadow: 0 28px 90px rgb(0 0 0 / 0.42), inset 0 1px 0 rgb(255 255 255 / 0.22);
+  backdrop-filter: blur(30px) saturate(1.7);
+  -webkit-backdrop-filter: blur(30px) saturate(1.7);
+  animation: creator-card-in 220ms ease-out both;
+}
+
+.creator-card::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 8%, rgb(255 231 196 / 0.42) 50%, transparent 92%) top center / 82% 1px no-repeat;
+  content: "";
+  pointer-events: none;
+}
+
+.creator-card::after {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.65'/%3E%3C/svg%3E");
+  content: "";
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.creator-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .vinyl-grooves {
   background:
     radial-gradient(circle at center, transparent 0 8%, rgb(0 0 0 / 0.74) 8.5% 13%, transparent 13.5%),
@@ -74,6 +114,22 @@ a:focus-visible,
 
 @keyframes blink {
   50% { opacity: 0; }
+}
+
+@keyframes creator-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes creator-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (min-width: 768px) {
@@ -91,6 +147,11 @@ a:focus-visible,
   }
 
   .clock-colon {
+    animation: none;
+  }
+
+  .creator-backdrop,
+  .creator-card {
     animation: none;
   }
 }
