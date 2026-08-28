@@ -5,21 +5,18 @@ const grain = `url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http:
 
 export default function Home() {
   return (
-    <main className="relative isolate flex min-h-dvh flex-1 flex-col items-center justify-between overflow-hidden">
-      <div className="hero-bg fixed inset-0 -z-20 bg-cover bg-center" aria-hidden="true" />
+    <main className="relative isolate min-h-screen w-screen overflow-hidden">
+      <div className="hero-bg fixed inset-0 -z-20 h-screen w-screen bg-cover bg-center" aria-hidden="true" />
       <div
-        className="fixed inset-0 -z-10 bg-repeat opacity-30 mix-blend-overlay"
+        className="fixed inset-0 -z-10 bg-repeat opacity-20 mix-blend-overlay"
         style={{ backgroundImage: grain, backgroundSize: "180px 180px" }}
         aria-hidden="true"
       />
-      <div
-        className="fixed inset-0 -z-10 bg-gradient-to-b from-black/35 via-transparent to-black/80"
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-white/10 via-transparent to-[rgba(120,53,20,0.1)]" aria-hidden="true" />
 
       <TopBar />
 
-      <section className="pointer-events-none flex min-h-dvh w-full items-end justify-center pb-[calc(max(1rem,env(safe-area-inset-bottom))+1rem)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-28 sm:justify-end sm:pb-[calc(max(1rem,env(safe-area-inset-bottom))+1.5rem)] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]">
+      <section className="pointer-events-none absolute left-1/2 top-[60%] z-10 w-[clamp(340px,56vw,760px)] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 sm:top-[62%]">
         <Player />
       </section>
     </main>

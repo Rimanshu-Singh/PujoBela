@@ -11,7 +11,7 @@
 
 :root {
   color-scheme: dark;
-  background: #6b301c;
+  background: #b7652e;
 }
 
 * {
@@ -25,7 +25,7 @@ body {
 
 body {
   margin: 0;
-  background: #160e0a;
+  background: #b7652e;
   color: white;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -47,6 +47,8 @@ a:focus-visible,
 .hero-bg {
   background-color: #a64f26;
   background-image: url("/bg/scene-wide.png");
+  background-position: center center;
+  background-size: cover;
 }
 
 .glass-panel {
