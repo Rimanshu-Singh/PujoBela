@@ -16,7 +16,7 @@ export default function Home() {
 
       <TopBar />
 
-      <section className="pointer-events-none fixed bottom-5 left-1/2 z-10 w-[calc(100vw-24px)] max-w-[560px] -translate-x-1/2 sm:bottom-12 sm:w-[clamp(360px,38vw,560px)]">
+      <section className="pointer-events-none fixed bottom-[18px] left-1/2 z-10 w-[calc(100vw-24px)] -translate-x-1/2 sm:bottom-[34px] sm:w-[min(520px,calc(100vw-32px))]">
         <Player />
       </section>
     </main>

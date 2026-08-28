@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { NextIcon, PauseIcon, PlayIcon, PreviousIcon } from "@/components/icons";
 import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS } from "@/lib/tracks";
 
-const PLAYER_GLASS = "border border-white/[0.22] bg-[rgba(161,111,103,0.72)] shadow-[0_18px_45px_rgba(60,32,24,0.24)] backdrop-blur-[18px]";
+const PLAYER_GLASS = "border border-[rgba(255,214,180,0.22)] bg-[rgba(42,28,24,0.72)] shadow-[0_22px_60px_rgba(24,12,8,0.38),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-[28px] backdrop-saturate-[1.6] [-webkit-backdrop-filter:blur(28px)_saturate(160%)]";
 const CHIP_GLASS = "border border-white/25 bg-[rgba(161,111,103,0.48)] shadow-[0_8px_24px_rgba(60,32,24,0.16)] backdrop-blur-[18px]";
 
 type NowPlaying = {
@@ -58,10 +58,10 @@ function readNowPlaying(player: YouTubePlayer): NowPlaying {
 function TrackDetails({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-[12px] font-bold leading-tight tracking-normal text-white">
+      <p className="truncate text-[15px] font-bold leading-tight tracking-normal text-white">
         {nowPlaying?.title ?? "Pujo Radio playlist"}
       </p>
-      <p className="mt-0.5 truncate text-[10px] font-medium leading-tight text-[#fff2e8]/75">
+      <p className="mt-1 truncate text-[12px] font-medium leading-tight text-white/[0.68]">
         {APPROVED_YOUTUBE_PLAYLIST.source}
       </p>
     </div>
@@ -120,9 +120,9 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
         if (event.key === "ArrowLeft") onSeek(Math.max(0, currentTime - 5));
       }}
     >
-      <div className="relative h-[2px] w-full rounded-full bg-white/[0.55]">
+      <div className="relative h-1 w-full rounded-full bg-white/[0.18]">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-white"
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-white to-[#ffd6a0]"
           style={{ width: `${percent}%` }}
         />
         <span
@@ -144,13 +144,13 @@ type TransportProps = {
 
 function Transport({ isPlaying, disabled, onPrevious, onToggle, onNext }: TransportProps) {
   return (
-    <div className="flex shrink-0 items-center justify-center gap-1">
+    <div className="flex shrink-0 items-center justify-center gap-2">
       <button
         type="button"
         onClick={onPrevious}
         disabled={disabled}
         aria-label="Previous track"
-        className="grid size-7 place-items-center rounded-full text-white/85 transition hover:bg-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        className="grid size-[30px] place-items-center rounded-[10px] bg-white/[0.08] text-white/[0.78] transition hover:bg-white/[0.14] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
       >
         <PreviousIcon className="size-[14px]" />
       </button>
@@ -159,16 +159,16 @@ function Transport({ isPlaying, disabled, onPrevious, onToggle, onNext }: Transp
         onClick={onToggle}
         disabled={disabled}
         aria-label={isPlaying ? "Pause" : "Play"}
-        className="grid size-[34px] place-items-center rounded-full bg-white text-[#6f4a43] shadow-[0_6px_14px_rgba(60,32,24,0.18)] transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+        className="grid size-[46px] place-items-center rounded-[14px] border border-white/[0.16] bg-[#0f0f10] text-white shadow-[0_10px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
       >
-        {isPlaying ? <PauseIcon className="size-[13px]" /> : <PlayIcon className="ml-0.5 size-[14px]" />}
+        {isPlaying ? <PauseIcon className="size-[15px]" /> : <PlayIcon className="size-[15px] translate-x-px" />}
       </button>
       <button
         type="button"
         onClick={onNext}
         disabled={disabled}
         aria-label="Next track"
-        className="grid size-7 place-items-center rounded-full text-white/85 transition hover:bg-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+        className="grid size-[30px] place-items-center rounded-[10px] bg-white/[0.08] text-white/[0.78] transition hover:bg-white/[0.14] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
       >
         <NextIcon className="size-[14px]" />
       </button>
@@ -181,7 +181,7 @@ function ArtworkSlot({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   const title = nowPlaying?.title ?? "Pujo Radio playlist";
 
   return (
-    <div className="relative size-[46px] shrink-0 overflow-hidden rounded-lg bg-[#7b514b]/40">
+    <div className="relative size-14 shrink-0 overflow-hidden rounded-[14px] bg-[#1a1110]/60 sm:size-16">
       <img
         src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
         alt={`${title} thumbnail`}
@@ -206,14 +206,14 @@ type PlayerCardProps = {
 
 function PlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
   return (
-    <div className={`${PLAYER_GLASS} flex h-auto min-h-[74px] items-center gap-3 rounded-[18px] px-3 py-3 sm:h-[74px] sm:py-0 sm:pr-3.5`}>
+    <div className={`${PLAYER_GLASS} grid min-h-[92px] grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[24px] px-4 py-[14px] sm:min-h-[96px] sm:grid-cols-[64px_minmax(0,1fr)_auto]`}>
       <ArtworkSlot nowPlaying={nowPlaying} />
-      <div className="min-w-0 flex-1 pt-0.5">
+      <div className="min-w-0">
         <TrackDetails nowPlaying={nowPlaying} />
-        <div className="mt-1.5">
+        <div className="mt-2">
           <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
         </div>
-        <div className="-mt-0.5 flex justify-between text-[9px] font-medium tabular-nums text-white/80">
+        <div className="mt-[5px] flex justify-between text-[10px] font-medium tabular-nums text-white/[0.62]">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
