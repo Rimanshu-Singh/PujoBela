@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pujo: #f4a53a;
+  --color-pujo-light: #ffc667;
+  --color-night: #160e0a;
+  --font-sans: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+  --font-serif: Iowan Old Style, Baskerville, "Times New Roman", serif;
+  --animate-spin-slow: spin 8s linear infinite;
+}
+
+:root {
+  color-scheme: dark;
+  background: #6b301c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #160e0a;
+  color: white;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="slider"]:focus-visible {
+  outline: 2px solid var(--color-pujo-light);
+  outline-offset: 3px;
+}
+
+.hero-bg {
+  background-color: #a64f26;
+  background-image: url("/bg/scene-wide.png");
+}
+
+.glass-panel {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background-image: linear-gradient(to bottom, rgb(255 255 255 / 0.15), rgb(255 255 255 / 0.055));
+  box-shadow: 0 16px 48px -12px rgb(0 0 0 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.2);
+  backdrop-filter: blur(64px) saturate(1.7);
+  -webkit-backdrop-filter: blur(64px) saturate(1.7);
+}
+
+.clock-colon {
+  animation: blink 1s steps(1, end) infinite;
+}
+
+.vinyl-grooves {
+  background:
+    radial-gradient(circle at center, transparent 0 8%, rgb(0 0 0 / 0.74) 8.5% 13%, transparent 13.5%),
+    repeating-radial-gradient(circle at center, rgb(255 255 255 / 0.055) 0 1px, transparent 1px 4px),
+    conic-gradient(from 35deg, #17100d, #3b2217 9%, #0c0908 20%, #332017 31%, #0b0908 49%, #40251a 65%, #0b0908 82%, #17100d);
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@media (orientation: portrait) {
+  .hero-bg {
+    /* The second layer keeps the site usable until the separately composed
+       portrait artwork is supplied. A missing first image is transparent. */
+    background-image: url("/bg/scene-tall.png"), url("/bg/scene-wide.png");
+    background-position: center, center;
+    background-size: cover, cover;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .clock-colon {
+    animation: none;
+  }
+}
