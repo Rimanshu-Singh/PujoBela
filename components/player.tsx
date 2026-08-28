@@ -75,7 +75,7 @@ function readNowPlaying(player: YouTubePlayer): NowPlaying {
 function TrackDetails({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-[14px] font-bold leading-tight tracking-[-0.01em] text-[#fff7ef]">
+      <p className="truncate text-[13px] font-bold leading-tight tracking-[-0.01em] text-[#fff7ef] md:text-[14px]">
         {nowPlaying?.title ?? "Pujo Radio playlist"}
       </p>
       <p className="mt-1 truncate text-[11px] font-medium leading-tight text-[rgba(255,247,239,0.72)]">
@@ -128,7 +128,7 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
       aria-valuenow={Math.round(currentTime)}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
-      className={`group relative h-1 w-full touch-none rounded-full bg-white/25 ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
+      className={`group relative h-[3px] w-full touch-none rounded-full bg-white/25 md:h-1 ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onKeyDown={(event) => {
@@ -166,14 +166,14 @@ function Transport({ isPlaying, isRepeating, isShuffling, disabled, onPrevious, 
   const utilityButton = "grid size-6 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30";
 
   return (
-    <div className="flex shrink-0 items-center justify-center gap-[9px]">
+    <div className="flex shrink-0 items-center justify-center gap-[5px] min-[380px]:gap-[7px] md:gap-[9px]">
       <button
         type="button"
         onClick={onShuffle}
         disabled={disabled}
         aria-label="Shuffle playlist"
         aria-pressed={isShuffling}
-        className={`${utilityButton} text-white/[0.78] ${isShuffling ? "opacity-100" : "opacity-80"}`}
+        className={`${utilityButton} hidden text-white/[0.78] min-[380px]:grid ${isShuffling ? "opacity-100" : "opacity-80"}`}
       >
         <Shuffle className="size-[15px]" strokeWidth={2.1} />
       </button>
@@ -191,7 +191,7 @@ function Transport({ isPlaying, isRepeating, isShuffling, disabled, onPrevious, 
         onClick={onToggle}
         disabled={disabled}
         aria-label={isPlaying ? "Pause" : "Play"}
-        className="grid size-[40px] place-items-center rounded-xl bg-white/[0.95] text-[#4a2a22] shadow-[0_8px_20px_rgba(40,20,14,0.22),inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+        className="grid size-[38px] place-items-center rounded-xl bg-white/[0.95] text-[#4a2a22] shadow-[0_8px_20px_rgba(40,20,14,0.22),inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
       >
         {isPlaying ? <ModernPauseIcon className="size-[22px]" /> : <ModernPlayIcon className="size-[22px]" />}
       </button>
@@ -210,7 +210,7 @@ function Transport({ isPlaying, isRepeating, isShuffling, disabled, onPrevious, 
         disabled={disabled}
         aria-label="Repeat playlist"
         aria-pressed={isRepeating}
-        className={`${utilityButton} text-white/[0.78] ${isRepeating ? "opacity-100" : "opacity-80"}`}
+        className={`${utilityButton} hidden text-white/[0.78] min-[380px]:grid ${isRepeating ? "opacity-100" : "opacity-80"}`}
       >
         <Repeat className="size-[15px]" strokeWidth={2.1} />
       </button>
@@ -223,7 +223,7 @@ function ArtworkSlot({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   const title = nowPlaying?.title ?? "Pujo Radio playlist";
 
   return (
-    <div className="relative size-[58px] shrink-0 overflow-hidden rounded-xl bg-white/[0.18]">
+    <div className="relative size-[56px] shrink-0 overflow-hidden rounded-xl bg-white/[0.18] max-[379px]:size-[50px] md:size-[58px]">
       <img
         src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
         alt={`${title} thumbnail`}
@@ -258,7 +258,7 @@ type PlayerCardProps = {
 
 function PlayerCard({ currentTime, duration, isPlaying, isRepeating, isReady, isShuffling, nowPlaying, onNext, onPrevious, onSeek, onRepeat, onShuffle, onToggle }: PlayerCardProps) {
   return (
-    <div className={`${PLAYER_GLASS} grid min-h-[86px] grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[20px] px-[15px] py-3 md:min-h-[100px]`}>
+    <div className={`${PLAYER_GLASS} grid min-h-[82px] grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[20px] p-3 max-[379px]:grid-cols-[50px_minmax(0,1fr)_auto] max-[379px]:gap-2.5 max-[379px]:p-2.5 md:min-h-[100px] md:grid-cols-[58px_minmax(0,1fr)_auto] md:px-[15px] md:py-3`}>
       <ArtworkSlot nowPlaying={nowPlaying} />
       <div className="min-w-0">
         <TrackDetails nowPlaying={nowPlaying} />

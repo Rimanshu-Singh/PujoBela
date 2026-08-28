@@ -60,7 +60,7 @@ function CountdownPill() {
   }, []);
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-white/25 bg-[#6c2d12]/25 px-3 py-2 text-[10px] font-semibold text-white shadow-[0_10px_30px_rgba(55,20,8,0.16)] backdrop-blur-2xl sm:px-4 sm:text-[12px]">
+    <div className="flex items-center gap-1.5 rounded-full border border-white/25 bg-[#6c2d12]/25 px-2.5 py-1.5 text-[9px] font-semibold text-white shadow-[0_10px_30px_rgba(55,20,8,0.16)] backdrop-blur-2xl min-[380px]:gap-2 min-[380px]:px-3 min-[380px]:py-2 min-[380px]:text-[10px] sm:px-4 sm:text-[12px]">
       <span className="flex items-center gap-1.5 whitespace-nowrap">
         <span className="size-2 rounded-full bg-[#47e882] shadow-[0_0_10px_rgba(71,232,130,0.85)]" />
         {ONLINE_USERS} online
@@ -76,7 +76,7 @@ function ActionButton({ href, label, children }: { href: string; label: string; 
     <a
       href={href}
       aria-label={label}
-      className="flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-full border border-white/25 bg-[#5c260f]/20 px-3 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(51,18,6,0.14)] backdrop-blur-xl transition hover:border-white/40 hover:bg-white/[0.16] sm:h-10 sm:min-w-10"
+      className="flex size-8 shrink-0 items-center justify-center gap-1.5 rounded-full border border-white/25 bg-[#5c260f]/20 p-0 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(51,18,6,0.14)] backdrop-blur-xl transition hover:border-white/40 hover:bg-white/[0.16] sm:h-10 sm:w-auto sm:min-w-10 sm:px-3"
     >
       {children}
     </a>
@@ -88,18 +88,18 @@ export function TopBar() {
     <header className="pointer-events-none fixed inset-x-0 top-0 z-20 text-shadow-sm">
       <div className="pointer-events-auto absolute left-[max(1rem,env(safe-area-inset-left))] top-[max(1rem,env(safe-area-inset-top))] sm:left-[max(1.5rem,env(safe-area-inset-left))] sm:top-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="mb-2 flex items-center gap-2 text-white drop-shadow-sm">
-          <span className="grid size-8 place-items-center rounded-full border border-white/25 bg-[#6c2d12]/25 backdrop-blur-xl sm:size-9">
+          <span className="grid size-7 place-items-center rounded-full border border-white/25 bg-[#6c2d12]/25 backdrop-blur-xl min-[380px]:size-8 sm:size-9">
             <Radio className="size-4" strokeWidth={2} />
           </span>
           <div>
-            <p className="text-[13px] font-semibold leading-none tracking-normal sm:text-[15px]">Pujo Radio</p>
-            <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.18em] text-white/60">Live from Kolkata</p>
+            <p className="text-[12px] font-semibold leading-none tracking-normal min-[380px]:text-[13px] sm:text-[15px]">Pujo Radio</p>
+            <p className="mt-1 text-[7px] font-bold uppercase tracking-[0.16em] text-white/60 min-[380px]:text-[8px]">Live from Kolkata</p>
           </div>
         </div>
         <Clock />
       </div>
 
-      <div className="absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+4.25rem)] -translate-x-1/2 sm:top-[max(1.5rem,env(safe-area-inset-top))]">
+      <div className="absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+5.75rem)] -translate-x-1/2 sm:top-[max(1.5rem,env(safe-area-inset-top))]">
         <CountdownPill />
       </div>
 

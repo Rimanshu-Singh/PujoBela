@@ -20,7 +20,8 @@
 
 html,
 body {
-  min-height: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 body {
@@ -46,9 +47,10 @@ a:focus-visible,
 
 .hero-bg {
   background-color: #a64f26;
-  background-image: url("/bg/scene-wide.png");
-  background-position: center center;
+  background-image: url("/bg/scene-tall.png");
+  background-position: center top;
   background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .glass-panel {
@@ -74,13 +76,10 @@ a:focus-visible,
   50% { opacity: 0; }
 }
 
-@media (orientation: portrait) {
+@media (min-width: 768px) {
   .hero-bg {
-    /* The second layer keeps the site usable until the separately composed
-       portrait artwork is supplied. A missing first image is transparent. */
-    background-image: url("/bg/scene-tall.png"), url("/bg/scene-wide.png");
-    background-position: center, center;
-    background-size: cover, cover;
+    background-image: url("/bg/scene-wide.png");
+    background-position: center center;
   }
 }
 

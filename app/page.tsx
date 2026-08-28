@@ -5,8 +5,8 @@ const grain = `url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http:
 
 export default function Home() {
   return (
-    <main className="relative isolate min-h-screen w-screen overflow-hidden">
-      <div className="hero-bg fixed inset-0 -z-20 h-screen w-screen bg-cover bg-center" aria-hidden="true" />
+    <main className="relative isolate min-h-dvh w-screen overflow-hidden pb-[env(safe-area-inset-bottom)]">
+      <div className="hero-bg fixed inset-0 -z-20 min-h-dvh w-screen" aria-hidden="true" />
       <div
         className="fixed inset-0 -z-10 bg-repeat opacity-20 mix-blend-overlay"
         style={{ backgroundImage: grain, backgroundSize: "180px 180px" }}
@@ -16,7 +16,12 @@ export default function Home() {
 
       <TopBar />
 
-      <section className="pointer-events-none fixed bottom-[18px] left-1/2 z-10 w-[min(560px,calc(100vw-24px))] -translate-x-1/2 sm:bottom-[26px] sm:w-[min(560px,calc(100vw-32px))]">
+      <h1 className="pointer-events-none fixed left-1/2 top-[20dvh] z-0 w-[min(82vw,22rem)] -translate-x-1/2 text-center text-[clamp(2.65rem,13vw,4rem)] font-bold leading-[0.92] tracking-[-0.04em] text-[#ffd24f] drop-shadow-[0_3px_10px_rgba(111,52,10,0.18)] md:hidden">
+        <span className="block">পুজো</span>
+        <span className="block">আসছে</span>
+      </h1>
+
+      <section className="pointer-events-none fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100vw-24px)] max-w-[560px] -translate-x-1/2 sm:w-[min(560px,calc(100vw-40px))] md:bottom-[26px] md:w-[min(560px,calc(100vw-32px))]">
         <Player />
       </section>
     </main>
