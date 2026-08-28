@@ -1,11 +1,11 @@
 "use client";
 
 import { track as trackEvent } from "@vercel/analytics";
+import { Repeat, Shuffle, SkipBack, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { NextIcon, PauseIcon, PlayIcon, PreviousIcon } from "@/components/icons";
 import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS } from "@/lib/tracks";
 
-const PLAYER_GLASS = "border border-white/[0.34] bg-[rgba(230,178,136,0.34)] shadow-[0_22px_60px_rgba(70,36,18,0.24),inset_0_1px_0_rgba(255,255,255,0.42),inset_0_-1px_0_rgba(120,60,25,0.12)] backdrop-blur-[30px] backdrop-saturate-[1.7] [-webkit-backdrop-filter:blur(30px)_saturate(170%)]";
+const PLAYER_GLASS = "border border-white/25 bg-[linear-gradient(135deg,rgba(170,115,105,0.58),rgba(120,82,76,0.46))] shadow-[0_18px_45px_rgba(54,28,20,0.24),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(80,40,30,0.12)] backdrop-blur-[24px] backdrop-saturate-[1.7] [-webkit-backdrop-filter:blur(24px)_saturate(170%)]";
 const CHIP_GLASS = "border border-white/25 bg-[rgba(161,111,103,0.48)] shadow-[0_8px_24px_rgba(60,32,24,0.16)] backdrop-blur-[18px]";
 
 type NowPlaying = {
@@ -13,6 +13,23 @@ type NowPlaying = {
   channelName: string;
   videoId: string;
 };
+
+function ModernPlayIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+      <path d="M8.35 6.42c0-1.24 1.36-2 2.42-1.35l8.16 5.08a1.59 1.59 0 0 1 0 2.7l-8.16 5.08c-1.06.65-2.42-.11-2.42-1.35V6.42Z" />
+    </svg>
+  );
+}
+
+function ModernPauseIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+      <rect x="6.75" y="5" width="3.6" height="14" rx="1.4" />
+      <rect x="13.65" y="5" width="3.6" height="14" rx="1.4" />
+    </svg>
+  );
+}
 
 let youtubeApiPromise: Promise<void> | null = null;
 
@@ -58,10 +75,10 @@ function readNowPlaying(player: YouTubePlayer): NowPlaying {
 function TrackDetails({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-[15px] font-bold leading-tight tracking-normal text-[#2f1a12]">
+      <p className="truncate text-[14px] font-bold leading-tight tracking-[-0.01em] text-[#fff7ef]">
         {nowPlaying?.title ?? "Pujo Radio playlist"}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium leading-tight text-[rgba(47,26,18,0.68)]">
+      <p className="mt-1 truncate text-[11px] font-medium leading-tight text-[rgba(255,247,239,0.72)]">
         {nowPlaying?.channelName ?? "YouTube Music"}
       </p>
     </div>
@@ -111,7 +128,7 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
       aria-valuenow={Math.round(currentTime)}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
-      className={`group flex h-4 w-full touch-none items-center ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
+      className={`group relative h-1 w-full touch-none rounded-full bg-white/25 ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onKeyDown={(event) => {
@@ -120,57 +137,82 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
         if (event.key === "ArrowLeft") onSeek(Math.max(0, currentTime - 5));
       }}
     >
-      <div className="relative h-1 w-full rounded-full bg-[rgba(47,26,18,0.16)]">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#fff4df] to-white"
-          style={{ width: `${percent}%` }}
-        />
-        <span
-          className="absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-          style={{ left: `${percent}%` }}
-        />
-      </div>
+      <span className="absolute inset-x-0 -inset-y-[10px]" aria-hidden="true" />
+      <div
+        className="absolute inset-y-0 left-0 rounded-full bg-white/[0.92]"
+        style={{ width: `${percent}%` }}
+      />
+      <span
+        className="absolute top-1/2 size-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.55)]"
+        style={{ left: `${percent}%` }}
+      />
     </div>
   );
 }
 
 type TransportProps = {
   isPlaying: boolean;
+  isRepeating: boolean;
+  isShuffling: boolean;
   disabled: boolean;
   onPrevious: () => void;
   onToggle: () => void;
   onNext: () => void;
+  onRepeat: () => void;
+  onShuffle: () => void;
 };
 
-function Transport({ isPlaying, disabled, onPrevious, onToggle, onNext }: TransportProps) {
+function Transport({ isPlaying, isRepeating, isShuffling, disabled, onPrevious, onToggle, onNext, onRepeat, onShuffle }: TransportProps) {
+  const utilityButton = "grid size-6 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30";
+
   return (
-    <div className="flex shrink-0 items-center justify-center gap-2.5">
+    <div className="flex shrink-0 items-center justify-center gap-[9px]">
+      <button
+        type="button"
+        onClick={onShuffle}
+        disabled={disabled}
+        aria-label="Shuffle playlist"
+        aria-pressed={isShuffling}
+        className={`${utilityButton} text-white/[0.78] ${isShuffling ? "opacity-100" : "opacity-80"}`}
+      >
+        <Shuffle className="size-[15px]" strokeWidth={2.1} />
+      </button>
       <button
         type="button"
         onClick={onPrevious}
         disabled={disabled}
         aria-label="Previous track"
-        className="grid size-[34px] place-items-center rounded-xl bg-white/[0.22] text-[rgba(47,26,18,0.75)] transition hover:bg-white/[0.32] disabled:cursor-not-allowed disabled:opacity-30"
+        className={`${utilityButton} text-white/[0.82] opacity-90`}
       >
-        <PreviousIcon className="size-[17px]" />
+        <SkipBack className="size-4" fill="currentColor" strokeWidth={1.8} />
       </button>
       <button
         type="button"
         onClick={onToggle}
         disabled={disabled}
         aria-label={isPlaying ? "Pause" : "Play"}
-        className="grid size-12 place-items-center rounded-[15px] bg-[rgba(255,255,255,0.94)] text-[#2b1812] shadow-[0_10px_28px_rgba(49,25,14,0.22),inset_0_1px_0_rgba(255,255,255,0.9)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+        className="grid size-[40px] place-items-center rounded-xl bg-white/[0.95] text-[#4a2a22] shadow-[0_8px_20px_rgba(40,20,14,0.22),inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
       >
-        {isPlaying ? <PauseIcon className="size-[22px]" /> : <PlayIcon className="size-[23px] translate-x-px" />}
+        {isPlaying ? <ModernPauseIcon className="size-[22px]" /> : <ModernPlayIcon className="size-[22px]" />}
       </button>
       <button
         type="button"
         onClick={onNext}
         disabled={disabled}
         aria-label="Next track"
-        className="grid size-[34px] place-items-center rounded-xl bg-white/[0.22] text-[rgba(47,26,18,0.75)] transition hover:bg-white/[0.32] disabled:cursor-not-allowed disabled:opacity-30"
+        className={`${utilityButton} text-white/[0.82] opacity-90`}
       >
-        <NextIcon className="size-[17px]" />
+        <SkipForward className="size-4" fill="currentColor" strokeWidth={1.8} />
+      </button>
+      <button
+        type="button"
+        onClick={onRepeat}
+        disabled={disabled}
+        aria-label="Repeat playlist"
+        aria-pressed={isRepeating}
+        className={`${utilityButton} text-white/[0.78] ${isRepeating ? "opacity-100" : "opacity-80"}`}
+      >
+        <Repeat className="size-[15px]" strokeWidth={2.1} />
       </button>
     </div>
   );
@@ -181,7 +223,7 @@ function ArtworkSlot({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
   const title = nowPlaying?.title ?? "Pujo Radio playlist";
 
   return (
-    <div className="relative size-[66px] shrink-0 overflow-hidden rounded-2xl bg-white/[0.18]">
+    <div className="relative size-[58px] shrink-0 overflow-hidden rounded-xl bg-white/[0.18]">
       <img
         src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
         alt={`${title} thumbnail`}
@@ -202,29 +244,43 @@ type PlayerCardProps = {
   currentTime: number;
   duration: number;
   isPlaying: boolean;
+  isRepeating: boolean;
   isReady: boolean;
+  isShuffling: boolean;
   nowPlaying: NowPlaying | null;
   onNext: () => void;
   onPrevious: () => void;
   onSeek: (time: number) => void;
+  onRepeat: () => void;
+  onShuffle: () => void;
   onToggle: () => void;
 };
 
-function PlayerCard({ currentTime, duration, isPlaying, isReady, nowPlaying, onNext, onPrevious, onSeek, onToggle }: PlayerCardProps) {
+function PlayerCard({ currentTime, duration, isPlaying, isRepeating, isReady, isShuffling, nowPlaying, onNext, onPrevious, onSeek, onRepeat, onShuffle, onToggle }: PlayerCardProps) {
   return (
-    <div className={`${PLAYER_GLASS} grid min-h-[104px] grid-cols-[66px_minmax(0,1fr)_auto] items-center gap-4 rounded-[26px] px-[18px] py-[15px]`}>
+    <div className={`${PLAYER_GLASS} grid min-h-[86px] grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[20px] px-[15px] py-3 md:min-h-[100px]`}>
       <ArtworkSlot nowPlaying={nowPlaying} />
       <div className="min-w-0">
         <TrackDetails nowPlaying={nowPlaying} />
-        <div className="mt-2">
+        <div className="mt-2.5">
           <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
-        </div>
-        <div className="mt-[5px] flex justify-between text-[10px] font-semibold tabular-nums text-[rgba(47,26,18,0.62)]">
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
+          <div className="mt-1 flex w-full justify-between text-[9px] font-semibold tabular-nums text-white/75">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
         </div>
       </div>
-      <Transport isPlaying={isPlaying} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
+      <Transport
+        isPlaying={isPlaying}
+        isRepeating={isRepeating}
+        isShuffling={isShuffling}
+        disabled={!isReady}
+        onPrevious={onPrevious}
+        onToggle={onToggle}
+        onNext={onNext}
+        onRepeat={onRepeat}
+        onShuffle={onShuffle}
+      />
     </div>
   );
 }
@@ -253,7 +309,9 @@ function PlaylistChips({ activeIndex, onChange }: { activeIndex: number; onChang
 export function Player() {
   const [playlistIndex, setPlaylistIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isRepeating, setIsRepeating] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -406,6 +464,8 @@ export function Player() {
           list: APPROVED_YOUTUBE_PLAYLIST.id,
           index: APPROVED_YOUTUBE_PLAYLIST.startIndex,
         });
+        player.setShuffle(isShuffling);
+        player.setLoop(isRepeating);
       } else {
         player.playVideo();
       }
@@ -416,6 +476,18 @@ export function Player() {
     playerRef.current?.seekTo(time, true);
     setCurrentTime(time);
   }, []);
+
+  const toggleShuffle = () => {
+    const nextValue = !isShuffling;
+    setIsShuffling(nextValue);
+    playerRef.current?.setShuffle(nextValue);
+  };
+
+  const toggleRepeat = () => {
+    const nextValue = !isRepeating;
+    setIsRepeating(nextValue);
+    playerRef.current?.setLoop(nextValue);
+  };
 
   const playlist = PLAYLISTS[playlistIndex];
 
@@ -434,12 +506,16 @@ export function Player() {
         currentTime={currentTime}
         duration={duration}
         isPlaying={isPlaying}
+        isRepeating={isRepeating}
         isReady={isReady}
+        isShuffling={isShuffling}
         nowPlaying={nowPlaying}
         onPrevious={previous}
         onToggle={togglePlayback}
         onNext={next}
         onSeek={seek}
+        onRepeat={toggleRepeat}
+        onShuffle={toggleShuffle}
       />
     </div>
   );

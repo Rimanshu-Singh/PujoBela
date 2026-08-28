@@ -14,6 +14,8 @@ declare global {
     pauseVideo(): void;
     nextVideo(): void;
     previousVideo(): void;
+    setLoop(loopPlaylists: boolean): void;
+    setShuffle(shufflePlaylist: boolean): void;
     seekTo(seconds: number, allowSeekAhead: boolean): void;
     cuePlaylist(options: { list: string; listType: "playlist"; index?: number; startSeconds?: number }): void;
     loadPlaylist(options: { list: string; listType: "playlist"; index?: number; startSeconds?: number }): void;
