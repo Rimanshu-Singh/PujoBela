@@ -1,3 +1,4 @@
+import { FeedbackButton } from "@/components/feedback-button";
 import { Player } from "@/components/player";
 import { TopBar } from "@/components/top-bar";
 
@@ -24,6 +25,8 @@ export default function Home() {
       <section className="pointer-events-none fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-10 w-[calc(100vw-24px)] max-w-[560px] -translate-x-1/2 sm:w-[min(560px,calc(100vw-40px))] md:bottom-[26px] md:w-[min(560px,calc(100vw-32px))]">
         <Player />
       </section>
+
+      <FeedbackButton />
     </main>
   );
 }
