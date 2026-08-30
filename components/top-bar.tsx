@@ -13,6 +13,8 @@ const formatter = new Intl.DateTimeFormat("en-IN", {
 
 const ONLINE_USERS = 246;
 const DURGA_PUJA_DATE = new Date("2026-10-21T00:00:00+05:30");
+// TODO: Replace with actual Buy Me a Coffee / UPI / payment link
+const SUPPORT_URL = "#";
 
 function Clock() {
   const [now, setNow] = useState<Date | null>(null);
@@ -69,18 +71,6 @@ function CountdownPill() {
       <span className="h-3 w-px bg-white/25" aria-hidden="true" />
       <span className="whitespace-nowrap">{days ?? "--"} days until Durga Puja</span>
     </div>
-  );
-}
-
-function ActionButton({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      aria-label={label}
-      className="flex size-8 shrink-0 items-center justify-center gap-1.5 rounded-full border border-white/25 bg-[#5c260f]/20 p-0 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(51,18,6,0.14)] backdrop-blur-xl transition hover:border-white/40 hover:bg-white/[0.16] sm:h-10 sm:w-auto sm:min-w-10 sm:px-3"
-    >
-      {children}
-    </a>
   );
 }
 
@@ -181,6 +171,103 @@ function BuilderDialogButton() {
   );
 }
 
+function SupportDialogButton() {
+  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    closeRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setIsOpen(false);
+      window.setTimeout(() => triggerRef.current?.focus(), 0);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  const closeDialog = () => {
+    setIsOpen(false);
+    window.setTimeout(() => triggerRef.current?.focus(), 0);
+  };
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setIsOpen(true)}
+        aria-label="Support Pujo Radio"
+        aria-haspopup="dialog"
+        className="grid size-11 shrink-0 place-items-center rounded-[15px] border border-white/[0.28] bg-white/[0.18] text-white shadow-[0_8px_24px_rgba(51,18,6,0.14)] backdrop-blur-[18px] transition hover:bg-white/[0.28]"
+      >
+        <Coffee className="size-5" strokeWidth={1.9} />
+      </button>
+
+      {isOpen && (
+        <div
+          className="creator-backdrop pointer-events-auto fixed inset-0 z-[60] flex min-h-dvh items-center justify-center overflow-y-auto bg-black/[0.28] p-[14px] backdrop-blur-[8px]"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) closeDialog();
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="support-dialog-title"
+            className="support-card w-[calc(100vw-28px)] max-w-[430px] rounded-3xl p-[22px] text-[#fff7ed] sm:rounded-[28px] sm:p-[26px]"
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div className="relative">
+                <span className="absolute inset-1 rounded-full bg-[#ffb45e]/40 blur-xl" aria-hidden="true" />
+                <div className="relative grid size-16 place-items-center rounded-[20px] border border-white/[0.22] bg-white/[0.12] text-[#ffd79a] shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+                  <Coffee className="size-7" strokeWidth={1.75} />
+                </div>
+              </div>
+              <button
+                ref={closeRef}
+                type="button"
+                onClick={closeDialog}
+                aria-label="Close support dialog"
+                className="grid size-[42px] shrink-0 place-items-center rounded-[14px] bg-white/[0.12] text-white/70 transition hover:bg-white/[0.2] hover:text-white"
+              >
+                <X className="size-[18px]" />
+              </button>
+            </div>
+
+            <p className="mt-6 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[rgba(255,216,170,0.72)]">Support the creator</p>
+            <h2 id="support-dialog-title" className="mt-2 text-[23px] font-extrabold leading-[1.1] tracking-[-0.03em] text-[#fff7ed] sm:text-[26px]">
+              Support Pujo Radio
+            </h2>
+            <p className="mt-3 text-[14px] leading-[1.6] text-[rgba(255,247,237,0.72)] sm:text-[15px]">
+              If this Durga Puja vibe made you smile, you can support the creator with a small coffee.
+            </p>
+            <p className="mt-4 text-[13px] font-medium text-[rgba(255,247,237,0.62)]">Made with love by Rimanshu Singh</p>
+
+            <a
+              href={SUPPORT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 flex h-[54px] w-full items-center justify-between rounded-[18px] bg-[linear-gradient(135deg,#fff4df,#ffd29b)] px-4 text-[#3b2118] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_35px_rgba(255,190,110,0.22),inset_0_1px_0_rgba(255,255,255,0.72)] sm:h-14"
+            >
+              <span className="flex items-center gap-3 text-[14px] font-extrabold">
+                <Coffee className="size-5" strokeWidth={2} />
+                Buy Me a Coffee
+              </span>
+              <ArrowUpRight className="size-[18px] opacity-60" strokeWidth={2} />
+            </a>
+            <p className="mt-3 text-center text-[11px] text-white/45">Your support helps keep this festive radio alive.</p>
+          </section>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function TopBar() {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-40 text-shadow-sm">
@@ -203,9 +290,7 @@ export function TopBar() {
 
       <nav aria-label="Radio actions" className="pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] flex gap-2 sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:top-[max(1.5rem,env(safe-area-inset-top))]">
         <BuilderDialogButton />
-        <ActionButton href="#support" label="Support Pujo Radio">
-          <Coffee className="size-4" strokeWidth={2} />
-        </ActionButton>
+        <SupportDialogButton />
       </nav>
     </header>
   );
