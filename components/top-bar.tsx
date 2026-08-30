@@ -36,7 +36,7 @@ function Clock() {
 
   return (
     <div
-      className="rounded-[14px] border border-white/20 bg-[#5c260f]/20 px-3 py-2 text-white shadow-[0_8px_24px_rgba(51,18,6,0.14)] backdrop-blur-xl"
+      className="time-card text-white"
       aria-label={label}
     >
       <div className="flex items-baseline gap-1 font-medium leading-none tracking-normal">
@@ -121,7 +121,7 @@ function BuilderDialogButton() {
         onClick={() => setIsOpen(true)}
         aria-label="About the creator"
         aria-haspopup="dialog"
-        className="grid size-11 shrink-0 place-items-center rounded-[15px] border border-white/[0.28] bg-white/[0.18] text-white shadow-[0_8px_24px_rgba(51,18,6,0.14)] backdrop-blur-[18px] transition hover:bg-white/[0.28]"
+        className="top-action-button"
       >
         <UserRound className="size-5" strokeWidth={1.9} />
       </button>
@@ -240,7 +240,7 @@ function SupportDialogButton() {
         onClick={() => setIsOpen(true)}
         aria-label="Support Pujo Radio"
         aria-haspopup="dialog"
-        className="grid size-11 shrink-0 place-items-center rounded-[15px] border border-white/[0.28] bg-white/[0.18] text-white shadow-[0_8px_24px_rgba(51,18,6,0.14)] backdrop-blur-[18px] transition hover:bg-white/[0.28]"
+        className="top-action-button"
       >
         <Coffee className="size-5" strokeWidth={1.9} />
       </button>
@@ -325,7 +325,7 @@ export function TopBar() {
         <CountdownPill />
       </div>
 
-      <nav aria-label="Radio actions" className="pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] flex gap-2 sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:top-[max(1.5rem,env(safe-area-inset-top))]">
+      <nav aria-label="Radio actions" className="top-actions pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:top-[max(1.5rem,env(safe-area-inset-top))]">
         <BuilderDialogButton />
         <SupportDialogButton />
       </nav>
