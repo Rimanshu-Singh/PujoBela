@@ -11,7 +11,6 @@ const formatter = new Intl.DateTimeFormat("en-IN", {
   hour12: true,
 });
 
-const ONLINE_USERS = 246;
 const DURGA_PUJA_DATE = new Date("2026-10-21T00:00:00+05:30");
 // TODO: Replace with actual Buy Me a Coffee / UPI / payment link
 const SUPPORT_URL = "#";
@@ -39,14 +38,14 @@ function Clock() {
       className="time-card text-white"
       aria-label={label}
     >
-      <div className="flex items-baseline gap-1 font-medium leading-none tracking-normal">
-        <span className="text-[12px] sm:text-[13px]">{hour}</span>
+      <div className="time-card-time">
+        <span className="time-card-primary">{hour}</span>
         <span className="clock-colon text-pujo-light">:</span>
-        <span className="text-[12px] sm:text-[13px]">{minute}</span>
-        <span className="ml-0.5 text-[9px] font-semibold uppercase tracking-normal text-white/75">{dayPeriod}</span>
-        <span className="text-[9px] font-semibold uppercase tracking-normal text-white/65">IST</span>
+        <span className="time-card-primary">{minute}</span>
+        <span className="time-card-meta ml-0.5">{dayPeriod}</span>
+        <span className="time-card-meta">IST</span>
       </div>
-      <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/65">Kolkata</p>
+      <p className="time-card-location">Kolkata</p>
     </div>
   );
 }
@@ -66,12 +65,7 @@ function CountdownPill() {
   }, []);
 
   return (
-    <div className="flex items-center gap-1.5 rounded-full border border-white/25 bg-[#6c2d12]/25 px-2.5 py-1.5 text-[9px] font-semibold text-white shadow-[0_10px_30px_rgba(55,20,8,0.16)] backdrop-blur-2xl min-[380px]:gap-2 min-[380px]:px-3 min-[380px]:py-2 min-[380px]:text-[10px] sm:px-4 sm:text-[12px]">
-      <span className="flex items-center gap-1.5 whitespace-nowrap">
-        <span className="size-2 rounded-full bg-[#47e882] shadow-[0_0_10px_rgba(71,232,130,0.85)]" />
-        {ONLINE_USERS} online
-      </span>
-      <span className="h-3 w-px bg-white/25" aria-hidden="true" />
+    <div className="flex items-center rounded-full border border-white/25 bg-[#6c2d12]/25 px-3 py-2 text-[10px] font-semibold text-white shadow-[0_10px_30px_rgba(55,20,8,0.16)] backdrop-blur-2xl sm:px-4 sm:text-[12px]">
       <span className="whitespace-nowrap">{days ?? "--"} days until Durga Puja</span>
     </div>
   );
