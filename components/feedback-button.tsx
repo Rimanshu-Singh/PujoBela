@@ -4,18 +4,26 @@ import { track as trackEvent } from "@vercel/analytics";
 import { MessageCircle, Send, Star, X } from "lucide-react";
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
 
-const FEEDBACK_ENDPOINT = process.env.NEXT_PUBLIC_FEEDBACK_ENDPOINT;
+const GOOGLE_FORM_ACTION = "https://docs.google.com/forms/d/e/1FAIpQLScxOPGozqJEzKT9Ms7w2Nq7yJEx_wDE5NjLcIVzSqv7TIEtxA/formResponse";
+
+const GOOGLE_FORM_FIELDS = {
+  name: "entry.1487132209",
+  rating: "entry.180893014",
+  feedback: "entry.1354945778",
+} as const;
 
 export function FeedbackButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [name, setName] = useState("");
+  const [feedback, setFeedback] = useState("");
   const [rating, setRating] = useState(0);
   const [status, setStatus] = useState<"idle" | "sent" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const nameId = useId();
-  const emailId = useId();
   const messageId = useId();
 
   useEffect(() => {
@@ -59,42 +67,41 @@ export function FeedbackButton() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (rating === 0) {
+    const trimmedName = name.trim();
+    const trimmedFeedback = feedback.trim();
+
+    if (!trimmedName || rating === 0 || !trimmedFeedback) {
+      setErrorMessage("Please add your name, rating, and feedback.");
       setStatus("error");
       return;
     }
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const feedback = {
-      name: String(formData.get("name") ?? "").trim(),
-      email: String(formData.get("email") ?? "").trim(),
-      message: String(formData.get("message") ?? "").trim(),
-      rating,
-    };
+    const formData = new FormData();
+    formData.append(GOOGLE_FORM_FIELDS.name, trimmedName);
+    formData.append(GOOGLE_FORM_FIELDS.rating, String(rating));
+    formData.append(GOOGLE_FORM_FIELDS.feedback, trimmedFeedback);
 
     setIsSending(true);
     setStatus("idle");
+    setErrorMessage("");
 
     try {
-      if (FEEDBACK_ENDPOINT) {
-        const response = await fetch(FEEDBACK_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(feedback),
-        });
-        if (!response.ok) throw new Error("Feedback request failed");
-      }
+      await fetch(GOOGLE_FORM_ACTION, {
+        method: "POST",
+        mode: "no-cors",
+        body: formData,
+      });
 
       trackEvent("feedback_submitted", {
         rating,
-        hasEmail: Boolean(feedback.email),
-        messageLength: feedback.message.length,
+        messageLength: trimmedFeedback.length,
       });
-      form.reset();
+      setName("");
+      setFeedback("");
       setRating(0);
       setStatus("sent");
     } catch {
+      setErrorMessage("Could not send feedback. Please try again.");
       setStatus("error");
     } finally {
       setIsSending(false);
@@ -108,6 +115,7 @@ export function FeedbackButton() {
         type="button"
         onClick={() => {
           setStatus("idle");
+          setErrorMessage("");
           setIsOpen(true);
         }}
         aria-label="Send feedback"
@@ -151,38 +159,30 @@ export function FeedbackButton() {
             {status === "sent" ? (
               <div className="mt-4 rounded-2xl border border-white/20 bg-white/10 px-4 py-6 text-center">
                 <MessageCircle className="mx-auto size-6 text-[#ffe4bd]" />
-                <p className="mt-2.5 text-[14px] font-semibold">Thank you for sharing.</p>
-                <p className="mt-1 text-[12px] text-white/65">Your feedback helps shape Pujo Radio.</p>
+                <p className="mt-2.5 text-[14px] font-semibold">Thanks for your feedback!</p>
                 <button type="button" onClick={closeModal} className="mt-4 rounded-xl bg-white/90 px-5 py-2 text-[12px] font-bold text-[#4a2a22] transition hover:bg-white">
                   Done
                 </button>
               </div>
             ) : (
               <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <label htmlFor={nameId} className="min-w-0 text-[10px] font-semibold text-white/75">
-                    Name
-                    <input
-                      id={nameId}
-                      name="name"
-                      required
-                      autoComplete="name"
-                      className="mt-1 h-9 w-full rounded-[10px] border border-white/20 bg-white/10 px-2.5 text-[12px] text-white outline-none placeholder:text-white/35 focus:border-white/45 focus:bg-white/[0.14]"
-                      placeholder="Your name"
-                    />
-                  </label>
-                  <label htmlFor={emailId} className="min-w-0 text-[10px] font-semibold text-white/75">
-                    Email <span className="font-normal text-white/45">(optional)</span>
-                    <input
-                      id={emailId}
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className="mt-1 h-9 w-full rounded-[10px] border border-white/20 bg-white/10 px-2.5 text-[12px] text-white outline-none placeholder:text-white/35 focus:border-white/45 focus:bg-white/[0.14]"
-                      placeholder="Email address"
-                    />
-                  </label>
-                </div>
+                <label htmlFor={nameId} className="block text-[10px] font-semibold text-white/75">
+                  Name
+                  <input
+                    id={nameId}
+                    name="name"
+                    required
+                    autoComplete="name"
+                    value={name}
+                    onChange={(event) => {
+                      setName(event.target.value);
+                      setStatus("idle");
+                      setErrorMessage("");
+                    }}
+                    className="mt-1 h-9 w-full rounded-[10px] border border-white/20 bg-white/10 px-2.5 text-[12px] text-white outline-none placeholder:text-white/35 focus:border-white/45 focus:bg-white/[0.14]"
+                    placeholder="Your name"
+                  />
+                </label>
 
                 <label htmlFor={messageId} className="block text-[10px] font-semibold text-white/75">
                   Feedback message
@@ -191,6 +191,12 @@ export function FeedbackButton() {
                     name="message"
                     required
                     rows={3}
+                    value={feedback}
+                    onChange={(event) => {
+                      setFeedback(event.target.value);
+                      setStatus("idle");
+                      setErrorMessage("");
+                    }}
                     className="mt-1 w-full resize-none rounded-[10px] border border-white/20 bg-white/10 px-2.5 py-2 text-[12px] leading-relaxed text-white outline-none placeholder:text-white/35 focus:border-white/45 focus:bg-white/[0.14]"
                     placeholder="Tell us what you liked or what we can improve…"
                   />
@@ -206,6 +212,7 @@ export function FeedbackButton() {
                         onClick={() => {
                           setRating(value);
                           setStatus("idle");
+                          setErrorMessage("");
                         }}
                         aria-label={`${value} star${value === 1 ? "" : "s"}`}
                         aria-pressed={rating === value}
@@ -219,7 +226,7 @@ export function FeedbackButton() {
 
                 {status === "error" && (
                   <p role="alert" className="text-[11px] font-semibold text-[#ffe0d6]">
-                    {rating === 0 ? "Please choose a rating before sending." : "Feedback could not be sent. Please try again."}
+                    {errorMessage}
                   </p>
                 )}
 

@@ -11,7 +11,7 @@ PujoBela is an immersive Durga Puja radio experience built for long afternoons, 
 - Responsive static artwork optimized for desktop and mobile compositions.
 - Kolkata time, active-listener display, and Durga Puja countdown.
 - YouTube Music playlist shortcuts.
-- Responsive creator, support, and feedback dialogs.
+- Responsive creator, support, and feedback dialogs, with feedback saved to Google Forms.
 - Keyboard-accessible controls, visible focus states, Escape-to-close dialogs, and reduced-motion support.
 - Vercel Analytics and Speed Insights integration.
 
@@ -59,24 +59,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-The app works without environment variables. To forward feedback submissions to an external service, add this to `.env.local`:
-
-```env
-NEXT_PUBLIC_FEEDBACK_ENDPOINT=https://your-api.example.com/feedback
-```
-
-The endpoint receives a JSON `POST` request:
-
-```json
-{
-  "name": "Listener name",
-  "email": "listener@example.com",
-  "message": "Feedback message",
-  "rating": 5
-}
-```
-
-When the variable is omitted, the feedback interface still works locally and records the submission event through Vercel Analytics, but no external feedback service receives the form data.
+No environment variables are required. The feedback dialog submits directly to the configured public Google Form and records a submission event through Vercel Analytics.
 
 ## Project structure
 
@@ -142,7 +125,7 @@ The YouTube IFrame API is loaded only in the browser. Audio playback begins afte
 | Creator name, Instagram, email, and image | `components/top-bar.tsx` |
 | Support/payment destination | `SUPPORT_URL` in `components/top-bar.tsx` |
 | Playlist ID and starting track | `lib/tracks.ts` |
-| Feedback API | `NEXT_PUBLIC_FEEDBACK_ENDPOINT` |
+| Google Form action and entry IDs | `components/feedback-button.tsx` |
 
 ## Accessibility and responsive behavior
 
@@ -161,13 +144,13 @@ npm run build
 npm run start
 ```
 
-The project is ready for deployment on Vercel or any platform that supports Next.js. For Vercel, import the repository, optionally configure `NEXT_PUBLIC_FEEDBACK_ENDPOINT`, and deploy with the default framework settings.
+The project is ready for deployment on Vercel or any platform that supports Next.js. For Vercel, import the repository and deploy with the default framework settings.
 
 ## Before publishing
 
 - Replace `public/creator/rimanshu-singh-placeholder.svg` with the final creator photo.
 - Replace the placeholder `SUPPORT_URL` with the real payment or support destination.
-- Connect `NEXT_PUBLIC_FEEDBACK_ENDPOINT` if feedback must be persisted.
+- Confirm the configured Google Form remains public and accepts responses.
 - Confirm `startVideoId` belongs to the configured YouTube playlist.
 - Confirm you have permission to distribute the background artwork and linked music.
 
