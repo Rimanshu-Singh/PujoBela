@@ -127,14 +127,18 @@ function PlayerCard({ currentTime, duration, isDhakActive, isPlaying, isRepeatin
   const mobileAction = "flex min-w-0 flex-1 items-center justify-center gap-1.5 border-0 bg-transparent px-0.5 py-3 text-white/80 transition hover:bg-white/[0.06] hover:text-white active:scale-95";
   return (
     <div className={`${PLAYER_GLASS} group relative overflow-hidden rounded-3xl`}>
-      <div className="flex items-stretch gap-3 p-3 sm:hidden">
-        <div className="w-16 shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-white/20"><img src={track.thumbnail} alt={`${track.title} artwork`} loading="eager" className="h-full w-full object-cover object-center" /></div>
+      <div className="flex items-center gap-3 p-3 sm:hidden">
+        <div className="size-[64px] shrink-0 aspect-square overflow-hidden rounded-xl shadow-lg ring-1 ring-white/20">
+          <img src={track.thumbnail} alt={`${track.title} artwork`} loading="eager" className="size-full object-cover object-center scale-[1.34]" />
+        </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center"><TrackDetails track={track} /><div className="mt-1.5"><SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} /><div className="mt-1 text-left text-[10px] tabular-nums text-white/60">{formatTime(currentTime)} / {track.duration}</div></div></div>
         <PrimaryTransport isPlaying={isPlaying} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
       </div>
 
       <div className="hidden items-center gap-3.5 p-3 pr-3.5 sm:flex">
-        <div className="size-[66px] shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-white/20"><img src={track.thumbnail} alt={`${track.title} artwork`} loading="eager" className="h-full w-full object-cover object-center" /></div>
+        <div className="size-[68px] shrink-0 aspect-square overflow-hidden rounded-xl shadow-lg ring-1 ring-white/20">
+          <img src={track.thumbnail} alt={`${track.title} artwork`} loading="eager" className="size-full object-cover object-center scale-[1.34]" />
+        </div>
         <div className="min-w-0 flex-1"><TrackDetails track={track} /><div className="mt-1.5"><SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} /><div className="mt-1 text-left text-[10px] tabular-nums text-white/60">{formatTime(currentTime)} / {track.duration}</div></div></div>
         <DesktopTransport isPlaying={isPlaying} isRepeating={isRepeating} isShuffling={isShuffling} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} onRepeat={onRepeat} onShuffle={onShuffle} />
       </div>
@@ -179,7 +183,9 @@ const PlaylistModal = memo(function PlaylistModal({ currentTrackIndex, isOpen, o
             const isActive = index === currentTrackIndex;
             return <button key={track.videoId} type="button" onClick={() => onSelectTrack(index)} aria-label={`Play ${track.title}`} aria-current={isActive ? "true" : undefined} className={`group flex w-full items-center gap-3 rounded-[18px] border-0 px-3 py-2.5 text-left transition-colors ${isActive ? "bg-white/[0.12]" : "bg-transparent hover:bg-white/[0.08]"}`}>
               <span className={`w-7 shrink-0 text-right text-[12px] font-semibold tabular-nums ${isActive ? "text-[#f1d449]" : "text-white/45"}`}>{String(index + 1).padStart(2, "0")}</span>
-              <img src={track.thumbnail} alt="" loading={isActive ? "eager" : "lazy"} className="size-11 shrink-0 rounded-[9px] object-cover object-center shadow-[0_7px_16px_rgba(0,0,0,0.2)]" />
+              <div className="size-11 shrink-0 aspect-square overflow-hidden rounded-[9px] shadow-[0_7px_16px_rgba(0,0,0,0.2)]">
+                <img src={track.thumbnail} alt="" loading={isActive ? "eager" : "lazy"} className="size-full object-cover object-center scale-[1.34]" />
+              </div>
               <span className="min-w-0 flex-1"><span className={`block truncate text-[13px] font-bold ${isActive ? "text-[#f1d449]" : "text-white"}`}>{track.title}</span><span className="mt-0.5 block truncate text-[11px] font-medium text-white/[0.58]">{track.channelName}</span></span>
               <span className="shrink-0 text-[11px] font-medium tabular-nums text-white/[0.42] max-[379px]:hidden">{track.duration}</span>
             </button>;
