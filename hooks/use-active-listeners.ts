@@ -1,91 +1,63 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-const HEARTBEAT_INTERVAL_MS = 20_000;
-
-type PresenceResponse = {
-  count?: unknown;
-};
+import { createClient } from "@supabase/supabase-js";
+import { useEffect, useMemo, useState } from "react";
 
 export function useActiveListeners() {
   const [activeListeners, setActiveListeners] = useState(1);
-  const tabIdRef = useRef<string | null>(null);
+
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      console.log("Supabase URL:", url);
+      console.log("Supabase Key:", key);
+    if (!url || !key) return null;
+
+    return createClient(url, key, {
+      auth: {
+        persistSession: false,
+      },
+    });
+  }, []);
 
   useEffect(() => {
-    const abortController = new AbortController();
-    let isActive = true;
-
-    try {
-      tabIdRef.current ??= window.crypto.randomUUID();
-    } catch {
+    if (!supabase) {
       setActiveListeners(1);
       return;
     }
 
-    const sendHeartbeat = async () => {
-      if (!tabIdRef.current) return;
+    const tabId = window.crypto.randomUUID();
+    const channel = supabase.channel("pujobela-active-listeners", {
+      config: {
+        presence: {
+          key: tabId,
+        },
+      },
+    });
 
-      try {
-        const response = await fetch("/api/presence", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            action: "heartbeat",
-            sessionId: tabIdRef.current,
-          }),
-          cache: "no-store",
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) throw new Error("Presence heartbeat failed");
-
-        const data = (await response.json()) as PresenceResponse;
-        if (
-          isActive &&
-          typeof data.count === "number" &&
-          Number.isFinite(data.count)
-        ) {
-          setActiveListeners(Math.max(1, Math.floor(data.count)));
-        } else if (isActive) {
-          setActiveListeners(1);
-        }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        if (isActive) setActiveListeners(1);
-      }
+    const updateActiveListeners = () => {
+      const presenceState = channel.presenceState();
+      setActiveListeners(Math.max(Object.keys(presenceState).length, 1));
     };
 
-    const leave = () => {
-      if (!tabIdRef.current) return;
+    channel
+      .on("presence", { event: "sync" }, updateActiveListeners)
+      .on("presence", { event: "join" }, updateActiveListeners)
+      .on("presence", { event: "leave" }, updateActiveListeners)
+      .subscribe(async (status) => {
+        if (status !== "SUBSCRIBED") return;
 
-      const payload = JSON.stringify({
-        action: "leave",
-        sessionId: tabIdRef.current,
+        await channel.track({
+          tabId,
+          onlineAt: new Date().toISOString(),
+        });
+        updateActiveListeners();
       });
 
-      navigator.sendBeacon("/api/presence", payload);
-    };
-
-    void sendHeartbeat();
-    const heartbeatInterval = window.setInterval(
-      () => void sendHeartbeat(),
-      HEARTBEAT_INTERVAL_MS,
-    );
-    window.addEventListener("pagehide", leave);
-    window.addEventListener("beforeunload", leave);
-
     return () => {
-      isActive = false;
-      window.clearInterval(heartbeatInterval);
-      window.removeEventListener("pagehide", leave);
-      window.removeEventListener("beforeunload", leave);
-      abortController.abort();
-      leave();
+      void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [supabase]);
 
   return activeListeners;
 }

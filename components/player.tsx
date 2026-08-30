@@ -1,9 +1,10 @@
 "use client";
 
 import { track as trackEvent } from "@vercel/analytics";
-import { Repeat, Shuffle, SkipBack, SkipForward } from "lucide-react";
+import { Repeat, Shuffle, SkipBack, SkipForward, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS } from "@/lib/tracks";
+import { createPortal } from "react-dom";
+import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS, type Playlist } from "@/lib/tracks";
 
 const PLAYER_GLASS = "border border-white/25 bg-[linear-gradient(135deg,rgba(170,115,105,0.58),rgba(120,82,76,0.46))] shadow-[0_18px_45px_rgba(54,28,20,0.24),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(80,40,30,0.12)] backdrop-blur-[24px] backdrop-saturate-[1.7] [-webkit-backdrop-filter:blur(24px)_saturate(170%)]";
 const CHIP_GLASS = "border border-white/25 bg-[rgba(161,111,103,0.48)] shadow-[0_8px_24px_rgba(60,32,24,0.16)] backdrop-blur-[18px]";
@@ -11,6 +12,17 @@ const CHIP_GLASS = "border border-white/25 bg-[rgba(161,111,103,0.48)] shadow-[0
 type NowPlaying = {
   title: string;
   channelName: string;
+  videoId: string;
+};
+
+type PlaylistMetadata = NowPlaying & {
+  duration: number;
+};
+
+type PlaylistRow = {
+  channelName: string;
+  duration: number;
+  title: string;
   videoId: string;
 };
 
@@ -63,8 +75,33 @@ function formatTime(seconds: number) {
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
 }
 
+function getPlaylistRows(
+  playlist: Playlist,
+  queueVideoIds: string[],
+  metadataByVideoId: Record<string, PlaylistMetadata>,
+) {
+  if (playlist.tracks.length > 0) {
+    return playlist.tracks.map<PlaylistRow>((track) => ({
+      channelName: track.artist,
+      duration: track.duration,
+      title: track.title,
+      videoId: track.videoId,
+    }));
+  }
+
+  return queueVideoIds.map<PlaylistRow>((videoId, index) => {
+    const metadata = metadataByVideoId[videoId];
+    return {
+      channelName: metadata?.channelName ?? "Pujo Radio",
+      duration: metadata?.duration ?? 0,
+      title: metadata?.title ?? `Pujo Radio Track ${String(index + 1).padStart(2, "0")}`,
+      videoId,
+    };
+  });
+}
+
 function readNowPlaying(player: YouTubePlayer): NowPlaying {
-  const data = player.getVideoData();
+  const data = player.getVideoData() ?? {};
   return {
     title: data.title || "Pujo playlist",
     channelName: data.author || "YouTube Music",
@@ -285,7 +322,13 @@ function PlayerCard({ currentTime, duration, isPlaying, isRepeating, isReady, is
   );
 }
 
-function PlaylistChips({ activeIndex, onChange }: { activeIndex: number; onChange: (index: number) => void }) {
+type PlaylistChipsProps = {
+  activeIndex: number;
+  onChange: (index: number) => void;
+  onOpenPlaylist: () => void;
+};
+
+function PlaylistChips({ activeIndex, onChange, onOpenPlaylist }: PlaylistChipsProps) {
   return (
     <div className="mb-3 flex justify-center">
       <div className="flex items-center gap-2" role="tablist" aria-label="Playlists">
@@ -295,7 +338,10 @@ function PlaylistChips({ activeIndex, onChange }: { activeIndex: number; onChang
             type="button"
             role="tab"
             aria-selected={activeIndex === index}
-            onClick={() => onChange(index)}
+            onClick={() => {
+              onChange(index);
+              if (playlist.id === "pujo-radio") onOpenPlaylist();
+            }}
             className={`${CHIP_GLASS} rounded-full px-4 py-2 text-[11px] font-semibold tracking-normal transition hover:border-white/40 hover:bg-white/[0.16] ${activeIndex === index ? "text-white" : "text-white/70"}`}
           >
             {playlist.label}
@@ -306,8 +352,184 @@ function PlaylistChips({ activeIndex, onChange }: { activeIndex: number; onChang
   );
 }
 
+type PlaylistModalProps = {
+  currentTrackIndex: number;
+  isOpen: boolean;
+  isReady: boolean;
+  metadataByVideoId: Record<string, PlaylistMetadata>;
+  nowPlaying: NowPlaying | null;
+  onClose: () => void;
+  onSelectTrack: (index: number) => void;
+  playlist: Playlist;
+  queueVideoIds: string[];
+};
+
+function PlaylistModal({
+  currentTrackIndex,
+  isOpen,
+  isReady,
+  metadataByVideoId,
+  nowPlaying,
+  onClose,
+  onSelectTrack,
+  playlist,
+  queueVideoIds,
+}: PlaylistModalProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || typeof document === "undefined") return null;
+
+  const rows = getPlaylistRows(playlist, queueVideoIds, metadataByVideoId);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 max-[520px]:p-3"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="playlist-dialog-title"
+    >
+      <button
+        type="button"
+        className="animate-overlay-fade-in absolute inset-0 cursor-default border-0 bg-black/[0.65] backdrop-blur-[18px] [-webkit-backdrop-filter:blur(18px)]"
+        aria-label="Close playlist"
+        onClick={onClose}
+      />
+
+      <section className="playlist-dialog-glass animate-overlay-scale-in relative flex max-h-[85dvh] w-[min(640px,calc(100vw-32px))] flex-col overflow-hidden rounded-[32px] max-[520px]:max-h-[82dvh] max-[520px]:w-[calc(100vw-24px)] max-[520px]:rounded-[26px]">
+        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.10] px-6 py-[18px] max-[520px]:px-[18px] max-[520px]:py-4">
+          <h2
+            id="playlist-dialog-title"
+            className="text-[13px] font-extrabold uppercase tracking-[0.22em] text-white/70"
+          >
+            Playlists
+          </h2>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close playlist"
+            className="grid size-9 place-items-center rounded-full border-0 bg-transparent text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="size-[18px]" strokeWidth={1.8} />
+          </button>
+        </header>
+
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 max-[520px]:px-3 max-[520px]:pb-3">
+          <div className="grid shrink-0 grid-cols-3 gap-2" role="tablist" aria-label="Playlist categories">
+            {[
+              { label: "Durga Puja", disabled: false },
+              { label: "Mahalaya", disabled: true },
+              { label: "Mahalaya Songs", disabled: true },
+            ].map((tab) => (
+              <button
+                key={tab.label}
+                type="button"
+                role="tab"
+                aria-selected={!tab.disabled}
+                disabled={tab.disabled}
+                className={`min-w-0 rounded-full px-2 py-2 text-[11px] font-extrabold uppercase tracking-[0.04em] transition-colors max-[420px]:text-[10px] ${
+                  tab.disabled
+                    ? "cursor-default bg-transparent text-white/45"
+                    : "bg-white/[0.16] text-white"
+                }`}
+              >
+                <span className="block truncate">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <p className="shrink-0 px-1 pb-3 pt-3 text-[12px] font-medium text-white/50 max-[520px]:text-[11px]">
+            The main curated Durga Puja playlist.
+          </p>
+
+          <div className="playlist-modal-scrollbar min-h-0 flex-1 overflow-y-auto pr-1" aria-live="polite">
+            {rows.length > 0 ? (
+              <div className="space-y-1">
+                {rows.map((track, index) => {
+                  const isActive =
+                    index === currentTrackIndex || nowPlaying?.videoId === track.videoId;
+                  const indexLabel = String(index + 1).padStart(2, "0");
+
+                  return (
+                    <button
+                      key={`${track.videoId}-${index}`}
+                      type="button"
+                      disabled={!isReady}
+                      onClick={() => onSelectTrack(index)}
+                      aria-label={`Play ${track.title}`}
+                      aria-current={isActive ? "true" : undefined}
+                      className={`group flex w-full items-center gap-3 rounded-[18px] border-0 px-3 py-2.5 text-left transition-colors disabled:cursor-wait disabled:opacity-60 ${
+                        isActive ? "bg-white/[0.12]" : "bg-transparent hover:bg-white/[0.08]"
+                      }`}
+                    >
+                      <span
+                        className={`w-7 shrink-0 text-right text-[12px] font-semibold tabular-nums ${
+                          isActive ? "text-[#f1d449]" : "text-white/45"
+                        }`}
+                      >
+                        {indexLabel}
+                      </span>
+                      <img
+                        src={`https://img.youtube.com/vi/${track.videoId}/hqdefault.jpg`}
+                        alt=""
+                        loading="lazy"
+                        className="size-11 shrink-0 rounded-[9px] object-cover object-center shadow-[0_7px_16px_rgba(0,0,0,0.2)]"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={`block truncate text-[13px] font-bold ${
+                            isActive ? "text-[#f1d449]" : "text-white"
+                          }`}
+                        >
+                          {track.title}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[11px] font-medium text-white/[0.58]">
+                          {track.channelName}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-[11px] font-medium tabular-nums text-white/[0.42] max-[379px]:hidden">
+                        {track.duration > 0 ? formatTime(track.duration) : "--:--"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid min-h-40 place-items-center px-6 text-center">
+                <p className="text-[12px] font-medium leading-relaxed text-white/55">
+                  {isReady ? "Loading the Pujo Radio playlist…" : "Preparing the Pujo Radio playlist…"}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
 export function Player() {
   const [playlistIndex, setPlaylistIndex] = useState(0);
+  const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRepeating, setIsRepeating] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -315,6 +537,9 @@ export function Player() {
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(APPROVED_YOUTUBE_PLAYLIST.startIndex);
+  const [playlistQueue, setPlaylistQueue] = useState<string[]>([]);
+  const [metadataByVideoId, setMetadataByVideoId] = useState<Record<string, PlaylistMetadata>>({});
   const playerRef = useRef<YouTubePlayer | null>(null);
   const playerHostRef = useRef<HTMLDivElement | null>(null);
   const playlistLoadedRef = useRef(false);
@@ -328,8 +553,38 @@ export function Player() {
     const nextNowPlaying = readNowPlaying(player);
     nowPlayingRef.current = nextNowPlaying;
     setNowPlaying(nextNowPlaying);
+    const nextDuration = player.getDuration() || 0;
     setCurrentTime(player.getCurrentTime() || 0);
-    setDuration(player.getDuration() || 0);
+    setDuration(nextDuration);
+
+    const nextQueue = player.getPlaylist();
+    if (Array.isArray(nextQueue) && nextQueue.length > 0) setPlaylistQueue(nextQueue);
+
+    const nextTrackIndex = player.getPlaylistIndex();
+    if (Number.isFinite(nextTrackIndex) && nextTrackIndex >= 0) {
+      setCurrentTrackIndex(nextTrackIndex);
+    }
+
+    if (nextNowPlaying.videoId) {
+      setMetadataByVideoId((current) => {
+        const previous = current[nextNowPlaying.videoId];
+        if (
+          previous?.title === nextNowPlaying.title &&
+          previous.channelName === nextNowPlaying.channelName &&
+          previous.duration === nextDuration
+        ) {
+          return current;
+        }
+
+        return {
+          ...current,
+          [nextNowPlaying.videoId]: {
+            ...nextNowPlaying,
+            duration: nextDuration,
+          },
+        };
+      });
+    }
   }, []);
 
   const playAfterQueueMove = useCallback(() => {
@@ -374,6 +629,8 @@ export function Player() {
     setNowPlaying(null);
     setCurrentTime(0);
     setDuration(0);
+    setCurrentTrackIndex(APPROVED_YOUTUBE_PLAYLIST.startIndex);
+    setPlaylistQueue([]);
     playlistLoadedRef.current = false;
 
     loadYouTubeApi().then(() => {
@@ -401,6 +658,7 @@ export function Player() {
             });
             setIsReady(true);
             window.setTimeout(syncFromPlayer, 250);
+            window.setTimeout(syncFromPlayer, 900);
           },
           onStateChange: ({ data, target }) => {
             syncFromPlayer();
@@ -419,7 +677,10 @@ export function Player() {
             }
           },
           onError: ({ data, target }) => {
-            const videoId = target.getVideoData().video_id || nowPlayingRef.current?.videoId || APPROVED_YOUTUBE_PLAYLIST.startVideoId;
+            const videoId =
+              target.getVideoData()?.video_id ||
+              nowPlayingRef.current?.videoId ||
+              APPROVED_YOUTUBE_PLAYLIST.startVideoId;
             setIsPlaying(false);
             trackEvent("youtube_playlist_error", { code: data, videoId, playlistId: APPROVED_YOUTUBE_PLAYLIST.id });
             const shouldContinue = shouldResumeRef.current;
@@ -447,6 +708,57 @@ export function Player() {
   const switchPlaylist = (index: number) => {
     setPlaylistIndex(index);
   };
+
+  const closePlaylist = useCallback(() => setIsPlaylistOpen(false), []);
+
+  const openPlaylist = useCallback(() => {
+    syncFromPlayer();
+    setIsPlaylistOpen(true);
+  }, [syncFromPlayer]);
+
+  const selectPlaylistTrack = useCallback(
+    (index: number) => {
+      const player = playerRef.current;
+      if (!player || !isReady) return;
+
+      shouldResumeRef.current = true;
+      playlistLoadedRef.current = true;
+      setCurrentTrackIndex(index);
+      setCurrentTime(0);
+      setIsPlaying(true);
+
+      const queuedVideoIds = player.getPlaylist();
+      const selectedVideoId = queuedVideoIds?.[index] ?? PLAYLISTS[0].tracks[index]?.videoId;
+      const selectedMetadata = selectedVideoId ? metadataByVideoId[selectedVideoId] : undefined;
+      if (selectedVideoId) {
+        setNowPlaying(
+          selectedMetadata ?? {
+            channelName: "Pujo Radio",
+            title: `Pujo Radio Track ${String(index + 1).padStart(2, "0")}`,
+            videoId: selectedVideoId,
+          },
+        );
+      }
+
+      if (queuedVideoIds && queuedVideoIds.length > 0) {
+        player.playVideoAt(index);
+      } else {
+        player.loadPlaylist({
+          listType: "playlist",
+          list: APPROVED_YOUTUBE_PLAYLIST.id,
+          index,
+        });
+      }
+
+      player.setShuffle(isShuffling);
+      player.setLoop(isRepeating);
+      window.setTimeout(syncFromPlayer, 250);
+      window.setTimeout(syncFromPlayer, 700);
+
+      if (window.matchMedia("(max-width: 767px)").matches) closePlaylist();
+    },
+    [closePlaylist, isReady, isRepeating, isShuffling, metadataByVideoId, syncFromPlayer],
+  );
 
   const togglePlayback = () => {
     const player = playerRef.current;
@@ -501,7 +813,22 @@ export function Player() {
         <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-pujo-light/95">{playlist.eyebrow}</p>
       </div>
 
-      <PlaylistChips activeIndex={playlistIndex} onChange={switchPlaylist} />
+      <PlaylistChips
+        activeIndex={playlistIndex}
+        onChange={switchPlaylist}
+        onOpenPlaylist={openPlaylist}
+      />
+      <PlaylistModal
+        currentTrackIndex={currentTrackIndex}
+        isOpen={isPlaylistOpen}
+        isReady={isReady}
+        metadataByVideoId={metadataByVideoId}
+        nowPlaying={nowPlaying}
+        onClose={closePlaylist}
+        onSelectTrack={selectPlaylistTrack}
+        playlist={PLAYLISTS[0]}
+        queueVideoIds={playlistQueue}
+      />
       <PlayerCard
         currentTime={currentTime}
         duration={duration}

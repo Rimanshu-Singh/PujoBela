@@ -9,7 +9,7 @@ PujoBela is an immersive Durga Puja radio experience built for long afternoons, 
 - YouTube playlist playback with play/pause, previous/next, seeking, shuffle, and repeat.
 - Live track title, channel name, artwork, elapsed time, and duration.
 - Responsive static artwork optimized for desktop and mobile compositions.
-- Kolkata time, Redis-backed active-listener presence, and Durga Puja countdown.
+- Kolkata time, Supabase Realtime active-listener presence, and Durga Puja countdown.
 - YouTube Music playlist shortcuts.
 - Responsive creator, support, and feedback dialogs, with feedback saved to Google Forms.
 - Keyboard-accessible controls, visible focus states, Escape-to-close dialogs, and reduced-motion support.
@@ -22,7 +22,7 @@ PujoBela is an immersive Durga Puja radio experience built for long afternoons, 
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/) 4
 - [Lucide React](https://lucide.dev/)
-- [Upstash Redis](https://upstash.com/redis) for anonymous listener presence
+- [Supabase Realtime Presence](https://supabase.com/docs/guides/realtime/presence) for anonymous listener presence
 - YouTube IFrame Player API
 - Vercel Analytics and Speed Insights
 
@@ -60,20 +60,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-The feedback dialog submits directly to the configured public Google Form and records a submission event through Vercel Analytics. Active-listener presence uses the following server-only Upstash Redis variables:
+The feedback dialog submits directly to the configured public Google Form and records a submission event through Vercel Analytics. Active-listener presence uses Supabase Realtime Presence with public anon credentials:
 
 ```bash
-UPSTASH_REDIS_REST_URL=your_upstash_rest_url
-UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-Connect an Upstash Redis database through the Vercel Marketplace to have these credentials injected into the deployment. Legacy `KV_REST_API_URL` and `KV_REST_API_TOKEN` names are supported too. Without Redis credentials, the presence endpoint safely returns a listener count of `1`.
+Create a free Supabase project, enable Realtime, and add these variables in your local `.env.local` and Vercel project settings. Without Supabase credentials, the listener display safely falls back to `1`.
 
 ## Project structure
 
 ```text
 app/
-  api/presence/route.ts Presence heartbeat and Redis listener count
   globals.css          Global theme, responsive layout, and glass effects
   layout.tsx           Metadata, viewport settings, and Vercel integrations
   page.tsx             Background layers and primary page composition
@@ -83,7 +82,7 @@ components/
   player.tsx           YouTube player, transport controls, seek bar, and UI
   top-bar.tsx          Clock, listener status, playlist links, and dialogs
 hooks/
-  use-active-listeners.ts Per-tab ID and 20-second presence heartbeat
+  use-active-listeners.ts Supabase Realtime per-tab listener presence
 lib/
   tracks.ts            YouTube playlist and local playlist configuration
 public/
@@ -133,7 +132,7 @@ The YouTube IFrame API is loaded only in the browser. Audio playback begins afte
 | Theme, glass styling, animations | `app/globals.css` |
 | Page title and description | `app/layout.tsx` |
 | Puja date and listener display | `components/top-bar.tsx` |
-| Presence heartbeat timing | `hooks/use-active-listeners.ts` |
+| Active-listener presence | `hooks/use-active-listeners.ts` |
 | Creator name, Instagram, email, and image | `components/top-bar.tsx` |
 | Support/payment destination | `SUPPORT_URL` in `components/top-bar.tsx` |
 | Playlist ID and starting track | `lib/tracks.ts` |
