@@ -13,7 +13,7 @@ const formatter = new Intl.DateTimeFormat("en-IN", {
   hour12: true,
 });
 
-const DURGA_PUJA_DATE = new Date("2026-10-21T00:00:00+05:30");
+const DURGA_PUJA_DATE = new Date("2026-10-16T00:00:00+05:30");
 // TODO: Replace with actual Buy Me a Coffee / UPI / payment link
 const SUPPORT_URL = "#";
 const PLAYLIST_URL = "https://music.youtube.com/playlist?list=PLR949LBNtYuU&si=3zFEKUjp7ie3jkl5";

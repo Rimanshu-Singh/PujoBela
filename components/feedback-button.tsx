@@ -120,7 +120,7 @@ export function FeedbackButton() {
         }}
         aria-label="Send feedback"
         aria-haspopup="dialog"
-        className="fixed bottom-[calc(112px+env(safe-area-inset-bottom))] right-[14px] z-30 grid size-[46px] place-items-center rounded-2xl border border-white/[0.28] bg-white/[0.22] text-white shadow-[0_12px_32px_rgba(45,22,12,0.2)] backdrop-blur-[18px] backdrop-saturate-[1.6] transition duration-200 hover:-translate-y-0.5 hover:bg-white/[0.32] focus-visible:-translate-y-0.5 md:bottom-7 md:right-6"
+        className="fixed bottom-[calc(156px+env(safe-area-inset-bottom))] right-[14px] z-30 grid size-[46px] place-items-center rounded-2xl border border-white/[0.28] bg-white/[0.22] text-white shadow-[0_12px_32px_rgba(45,22,12,0.2)] backdrop-blur-[18px] backdrop-saturate-[1.6] transition duration-200 hover:-translate-y-0.5 hover:bg-white/[0.32] focus-visible:-translate-y-0.5 sm:bottom-[calc(114px+env(safe-area-inset-bottom))] md:bottom-7 md:right-6"
       >
         <MessageCircle className="size-5" strokeWidth={1.9} />
       </button>

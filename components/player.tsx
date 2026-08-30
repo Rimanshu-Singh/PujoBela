@@ -1,46 +1,21 @@
 "use client";
 
 import { track as trackEvent } from "@vercel/analytics";
-import { Repeat, Shuffle, SkipBack, SkipForward, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Music2, Repeat, Shuffle, SkipBack, SkipForward, X } from "lucide-react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS, type Playlist } from "@/lib/tracks";
+import { APPROVED_YOUTUBE_PLAYLIST, PLAYLISTS } from "@/lib/tracks";
+import { PUJO_PLAYLIST, type PujoPlaylistTrack } from "@/src/data/pujo-playlist";
 
-const PLAYER_GLASS = "border border-white/25 bg-[linear-gradient(135deg,rgba(170,115,105,0.58),rgba(120,82,76,0.46))] shadow-[0_18px_45px_rgba(54,28,20,0.24),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(80,40,30,0.12)] backdrop-blur-[24px] backdrop-saturate-[1.7] [-webkit-backdrop-filter:blur(24px)_saturate(170%)]";
+const PLAYER_GLASS = "border border-white/15 bg-white/[0.07] shadow-[0_8px_40px_rgba(0,0,0,0.45)] backdrop-blur-2xl backdrop-saturate-150 [-webkit-backdrop-filter:blur(40px)_saturate(150%)]";
 const CHIP_GLASS = "border border-white/25 bg-[rgba(161,111,103,0.48)] shadow-[0_8px_24px_rgba(60,32,24,0.16)] backdrop-blur-[18px]";
 
-type NowPlaying = {
-  title: string;
-  channelName: string;
-  videoId: string;
-};
-
-type PlaylistMetadata = NowPlaying & {
-  duration: number;
-};
-
-type PlaylistRow = {
-  channelName: string;
-  duration: number;
-  title: string;
-  videoId: string;
-};
-
 function ModernPlayIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <path d="M8.35 6.42c0-1.24 1.36-2 2.42-1.35l8.16 5.08a1.59 1.59 0 0 1 0 2.7l-8.16 5.08c-1.06.65-2.42-.11-2.42-1.35V6.42Z" />
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor"><path d="M8.35 6.42c0-1.24 1.36-2 2.42-1.35l8.16 5.08a1.59 1.59 0 0 1 0 2.7l-8.16 5.08c-1.06.65-2.42-.11-2.42-1.35V6.42Z" /></svg>;
 }
 
 function ModernPauseIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <rect x="6.75" y="5" width="3.6" height="14" rx="1.4" />
-      <rect x="13.65" y="5" width="3.6" height="14" rx="1.4" />
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor"><rect x="6.75" y="5" width="3.6" height="14" rx="1.4" /><rect x="13.65" y="5" width="3.6" height="14" rx="1.4" /></svg>;
 }
 
 let youtubeApiPromise: Promise<void> | null = null;
@@ -56,8 +31,7 @@ function loadYouTubeApi() {
       resolve();
     };
 
-    const existing = document.querySelector<HTMLScriptElement>('script[src="https://www.youtube.com/iframe_api"]');
-    if (!existing) {
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
       const script = document.createElement("script");
       script.src = "https://www.youtube.com/iframe_api";
       script.async = true;
@@ -68,92 +42,37 @@ function loadYouTubeApi() {
   return youtubeApiPromise;
 }
 
+function durationToSeconds(duration: string) {
+  return duration.split(":").map(Number).reduce((total, value) => total * 60 + value, 0);
+}
+
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const minutes = Math.floor(seconds / 60);
-  const remainder = Math.floor(seconds % 60);
-  return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+  return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;
 }
 
-function getPlaylistRows(
-  playlist: Playlist,
-  queueVideoIds: string[],
-  metadataByVideoId: Record<string, PlaylistMetadata>,
-) {
-  if (playlist.tracks.length > 0) {
-    return playlist.tracks.map<PlaylistRow>((track) => ({
-      channelName: track.artist,
-      duration: track.duration,
-      title: track.title,
-      videoId: track.videoId,
-    }));
-  }
-
-  return queueVideoIds.map<PlaylistRow>((videoId, index) => {
-    const metadata = metadataByVideoId[videoId];
-    return {
-      channelName: metadata?.channelName ?? "Pujo Radio",
-      duration: metadata?.duration ?? 0,
-      title: metadata?.title ?? `Pujo Radio Track ${String(index + 1).padStart(2, "0")}`,
-      videoId,
-    };
-  });
+function getRandomTrackIndex(currentIndex: number) {
+  if (PUJO_PLAYLIST.length < 2) return 0;
+  let nextIndex = currentIndex;
+  while (nextIndex === currentIndex) nextIndex = Math.floor(Math.random() * PUJO_PLAYLIST.length);
+  return nextIndex;
 }
 
-function readNowPlaying(player: YouTubePlayer): NowPlaying {
-  const data = player.getVideoData() ?? {};
-  return {
-    title: data.title || "Pujo playlist",
-    channelName: data.author || "YouTube Music",
-    videoId: data.video_id || APPROVED_YOUTUBE_PLAYLIST.startVideoId,
-  };
+function TrackDetails({ track }: { track: PujoPlaylistTrack }) {
+  return <div className="min-w-0"><p className="truncate text-[13px] font-bold leading-tight tracking-[-0.01em] text-[#fff7ef] md:text-[14px]">{track.title}</p><p className="mt-1 truncate text-[11px] font-medium leading-tight text-[rgba(255,247,239,0.72)]">{track.channelName}</p></div>;
 }
 
-function TrackDetails({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
-  return (
-    <div className="min-w-0">
-      <p className="truncate text-[13px] font-bold leading-tight tracking-[-0.01em] text-[#fff7ef] md:text-[14px]">
-        {nowPlaying?.title ?? "Pujo Radio playlist"}
-      </p>
-      <p className="mt-1 truncate text-[11px] font-medium leading-tight text-[rgba(255,247,239,0.72)]">
-        {nowPlaying?.channelName ?? "YouTube Music"}
-      </p>
-    </div>
-  );
-}
-
-type SeekBarProps = {
-  currentTime: number;
-  duration: number;
-  onSeek: (time: number) => void;
-  disabled?: boolean;
-};
+type SeekBarProps = { currentTime: number; duration: number; onSeek: (time: number) => void; disabled?: boolean };
 
 function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
   const railRef = useRef<HTMLDivElement>(null);
   const percent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
-
-  const updateFromPointer = useCallback(
-    (clientX: number) => {
-      const rail = railRef.current;
-      if (!rail || disabled || duration <= 0) return;
-      const bounds = rail.getBoundingClientRect();
-      const ratio = Math.min(1, Math.max(0, (clientX - bounds.left) / bounds.width));
-      onSeek(ratio * duration);
-    },
-    [disabled, duration, onSeek],
-  );
-
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (disabled) return;
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    updateFromPointer(event.clientX);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) updateFromPointer(event.clientX);
-  };
+  const updateFromPointer = useCallback((clientX: number) => {
+    const rail = railRef.current;
+    if (!rail || disabled || duration <= 0) return;
+    const bounds = rail.getBoundingClientRect();
+    onSeek(Math.min(1, Math.max(0, (clientX - bounds.left) / bounds.width)) * duration);
+  }, [disabled, duration, onSeek]);
 
   return (
     <div
@@ -165,367 +84,112 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
       aria-valuenow={Math.round(currentTime)}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
-      className={`pujo-player-progress group relative h-[3px] w-full touch-none rounded-full bg-white/25 md:h-1 ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onKeyDown={(event) => {
-        if (disabled) return;
-        if (event.key === "ArrowRight") onSeek(Math.min(duration, currentTime + 5));
-        if (event.key === "ArrowLeft") onSeek(Math.max(0, currentTime - 5));
-      }}
+      className={`group/bar relative h-2 w-full touch-none ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
+      onPointerDown={(event) => { if (!disabled) { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); updateFromPointer(event.clientX); } }}
+      onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) updateFromPointer(event.clientX); }}
+      onKeyDown={(event) => { if (!disabled && event.key === "ArrowRight") onSeek(Math.min(duration, currentTime + 5)); if (!disabled && event.key === "ArrowLeft") onSeek(Math.max(0, currentTime - 5)); }}
     >
-      <span className="absolute inset-x-0 -inset-y-[10px]" aria-hidden="true" />
-      <div
-        className="pujo-player-progress-fill absolute inset-y-0 left-0 rounded-full bg-white/[0.92]"
-        style={{ width: `${percent}%` }}
-      />
-      <span
-        className="absolute top-1/2 size-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.55)]"
-        style={{ left: `${percent}%` }}
-      />
-    </div>
-  );
-}
-
-type TransportProps = {
-  isPlaying: boolean;
-  isRepeating: boolean;
-  isShuffling: boolean;
-  disabled: boolean;
-  onPrevious: () => void;
-  onToggle: () => void;
-  onNext: () => void;
-  onRepeat: () => void;
-  onShuffle: () => void;
-};
-
-function Transport({ isPlaying, isRepeating, isShuffling, disabled, onPrevious, onToggle, onNext, onRepeat, onShuffle }: TransportProps) {
-  const utilityButton = "pujo-player-control grid size-6 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30";
-
-  return (
-    <div className="flex shrink-0 items-center justify-center gap-[5px] min-[380px]:gap-[7px] md:gap-[9px]">
-      <button
-        type="button"
-        onClick={onShuffle}
-        disabled={disabled}
-        aria-label="Shuffle playlist"
-        aria-pressed={isShuffling}
-        className={`${utilityButton} hidden text-white/[0.78] min-[380px]:grid ${isShuffling ? "opacity-100" : "opacity-80"}`}
-      >
-        <Shuffle className="size-[15px]" strokeWidth={2.1} />
-      </button>
-      <button
-        type="button"
-        onClick={onPrevious}
-        disabled={disabled}
-        aria-label="Previous track"
-        className={`${utilityButton} text-white/[0.82] opacity-90`}
-      >
-        <SkipBack className="size-4" fill="currentColor" strokeWidth={1.8} />
-      </button>
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={disabled}
-        aria-label={isPlaying ? "Pause" : "Play"}
-        className="pujo-player-main-button grid size-[38px] place-items-center rounded-xl bg-white/[0.95] text-[#4a2a22] shadow-[0_8px_20px_rgba(40,20,14,0.22),inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
-      >
-        {isPlaying ? <ModernPauseIcon className="size-[22px]" /> : <ModernPlayIcon className="size-[22px]" />}
-      </button>
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={disabled}
-        aria-label="Next track"
-        className={`${utilityButton} text-white/[0.82] opacity-90`}
-      >
-        <SkipForward className="size-4" fill="currentColor" strokeWidth={1.8} />
-      </button>
-      <button
-        type="button"
-        onClick={onRepeat}
-        disabled={disabled}
-        aria-label="Repeat playlist"
-        aria-pressed={isRepeating}
-        className={`${utilityButton} hidden text-white/[0.78] min-[380px]:grid ${isRepeating ? "opacity-100" : "opacity-80"}`}
-      >
-        <Repeat className="size-[15px]" strokeWidth={2.1} />
-      </button>
-    </div>
-  );
-}
-
-function ArtworkSlot({ nowPlaying }: { nowPlaying: NowPlaying | null }) {
-  const videoId = nowPlaying?.videoId ?? APPROVED_YOUTUBE_PLAYLIST.startVideoId;
-  const title = nowPlaying?.title ?? "Pujo Radio playlist";
-
-  return (
-    <div className="relative size-[56px] shrink-0 overflow-hidden rounded-xl bg-white/[0.18] max-[379px]:size-[50px] md:size-[58px]">
-      <img
-        src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-        alt={`${title} thumbnail`}
-        className="h-full w-full object-cover object-center"
-        onError={(event) => {
-          const image = event.currentTarget;
-          if (image.dataset.fallbackApplied) return;
-          image.dataset.fallbackApplied = "true";
-          image.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/[0.18]" />
-    </div>
-  );
-}
-
-type PlayerCardProps = {
-  currentTime: number;
-  duration: number;
-  isPlaying: boolean;
-  isRepeating: boolean;
-  isReady: boolean;
-  isShuffling: boolean;
-  nowPlaying: NowPlaying | null;
-  onNext: () => void;
-  onPrevious: () => void;
-  onSeek: (time: number) => void;
-  onRepeat: () => void;
-  onShuffle: () => void;
-  onToggle: () => void;
-};
-
-function PlayerCard({ currentTime, duration, isPlaying, isRepeating, isReady, isShuffling, nowPlaying, onNext, onPrevious, onSeek, onRepeat, onShuffle, onToggle }: PlayerCardProps) {
-  return (
-    <div className={`${PLAYER_GLASS} pujo-player-glass grid min-h-[82px] grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[20px] p-3 max-[379px]:grid-cols-[50px_minmax(0,1fr)_auto] max-[379px]:gap-2.5 max-[379px]:p-2.5 md:min-h-[100px] md:grid-cols-[58px_minmax(0,1fr)_auto] md:px-[15px] md:py-3`}>
-      <ArtworkSlot nowPlaying={nowPlaying} />
-      <div className="min-w-0">
-        <TrackDetails nowPlaying={nowPlaying} />
-        <div className="mt-2.5">
-          <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} />
-          <div className="mt-1 flex w-full justify-between text-[9px] font-semibold tabular-nums text-white/75">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
+      <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-sm bg-white/20">
+        <div className="h-full rounded-sm bg-white/90" style={{ width: `${percent}%` }} />
       </div>
-      <Transport
-        isPlaying={isPlaying}
-        isRepeating={isRepeating}
-        isShuffling={isShuffling}
-        disabled={!isReady}
-        onPrevious={onPrevious}
-        onToggle={onToggle}
-        onNext={onNext}
-        onRepeat={onRepeat}
-        onShuffle={onShuffle}
-      />
+      <span className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-white opacity-0 shadow transition-opacity group-hover/bar:opacity-100 group-focus-visible/bar:opacity-100" style={{ left: `${percent}%` }} />
     </div>
   );
 }
 
-type PlaylistChipsProps = {
-  activeIndex: number;
-  onChange: (index: number) => void;
-  onOpenPlaylist: () => void;
-};
+type TransportProps = { isPlaying: boolean; isRepeating: boolean; isShuffling: boolean; disabled: boolean; onPrevious: () => void; onToggle: () => void; onNext: () => void; onRepeat: () => void; onShuffle: () => void };
 
-function PlaylistChips({ activeIndex, onChange, onOpenPlaylist }: PlaylistChipsProps) {
+function PrimaryTransport({ isPlaying, disabled, onPrevious, onToggle, onNext }: Pick<TransportProps, "isPlaying" | "disabled" | "onPrevious" | "onToggle" | "onNext">) {
+  const utilityButton = "grid size-8 place-items-center rounded-xl border-0 bg-transparent p-0 text-white/80 transition hover:bg-white/15 hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30";
   return (
-    <div className="mb-3 flex justify-center">
-      <div className="flex items-center gap-2" role="tablist" aria-label="Playlists">
-        {PLAYLISTS.map((playlist, index) => (
-          <button
-            key={playlist.id}
-            type="button"
-            role="tab"
-            aria-selected={activeIndex === index}
-            onClick={() => {
-              onChange(index);
-              if (playlist.id === "pujo-radio") onOpenPlaylist();
-            }}
-            className={`${CHIP_GLASS} rounded-full px-4 py-2 text-[11px] font-semibold tracking-normal transition hover:border-white/40 hover:bg-white/[0.16] ${activeIndex === index ? "text-white" : "text-white/70"}`}
-          >
-            {playlist.label}
-          </button>
-        ))}
+    <div className="flex shrink-0 items-center gap-0.5">
+      <button type="button" onClick={onPrevious} disabled={disabled} aria-label="Previous track" className={utilityButton}><SkipBack className="size-4" fill="currentColor" strokeWidth={1.8} /></button>
+      <button type="button" onClick={onToggle} disabled={disabled} aria-label={isPlaying ? "Pause" : "Play"} aria-pressed={isPlaying} className="grid size-9 place-items-center rounded-xl border-0 bg-white text-black shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50">{isPlaying ? <ModernPauseIcon className="size-4" /> : <ModernPlayIcon className="size-4" />}</button>
+      <button type="button" onClick={onNext} disabled={disabled} aria-label="Next track" className={utilityButton}><SkipForward className="size-4" fill="currentColor" strokeWidth={1.8} /></button>
+    </div>
+  );
+}
+
+function DesktopTransport(props: TransportProps) {
+  const utilityButton = "grid size-8 place-items-center rounded-xl border-0 bg-transparent p-0 text-white/80 transition-colors hover:bg-white/15 hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30";
+  return (
+    <div className="flex shrink-0 items-center gap-0.5">
+      <button type="button" onClick={props.onShuffle} disabled={props.disabled} aria-label={props.isShuffling ? "Shuffle on" : "Shuffle off"} aria-pressed={props.isShuffling} className={`${utilityButton} ${props.isShuffling ? "bg-white/15 text-white" : ""}`}><Shuffle className="size-3.5" strokeWidth={2.2} /></button>
+      <PrimaryTransport isPlaying={props.isPlaying} disabled={props.disabled} onPrevious={props.onPrevious} onToggle={props.onToggle} onNext={props.onNext} />
+      <button type="button" onClick={props.onRepeat} disabled={props.disabled} aria-label={props.isRepeating ? "Repeat on" : "Repeat off"} aria-pressed={props.isRepeating} className={`${utilityButton} ${props.isRepeating ? "bg-white/15 text-white" : ""}`}><Repeat className="size-3.5" strokeWidth={2.2} /></button>
+    </div>
+  );
+}
+
+type PlayerCardProps = TransportProps & { currentTime: number; duration: number; isDhakActive: boolean; isReady: boolean; track: PujoPlaylistTrack; onDhak: () => void; onSeek: (time: number) => void };
+
+function PlayerCard({ currentTime, duration, isDhakActive, isPlaying, isRepeating, isReady, isShuffling, track, onDhak, onNext, onPrevious, onSeek, onRepeat, onShuffle, onToggle }: PlayerCardProps) {
+  const mobileAction = "flex min-w-0 flex-1 items-center justify-center gap-1.5 border-0 bg-transparent px-0.5 py-3 text-white/80 transition hover:bg-white/[0.06] hover:text-white active:scale-95";
+  return (
+    <div className={`${PLAYER_GLASS} group relative overflow-hidden rounded-3xl`}>
+      <div className="flex items-stretch gap-3 p-3 sm:hidden">
+        <div className="w-16 shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-white/20"><img src={track.thumbnail} alt={`${track.title} artwork`} loading="eager" className="h-full w-full object-cover object-center" /></div>
+        <div className="flex min-w-0 flex-1 flex-col justify-center"><TrackDetails track={track} /><div className="mt-1.5"><SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} /><div className="mt-1 text-left text-[10px] tabular-nums text-white/60">{formatTime(currentTime)} / {track.duration}</div></div></div>
+        <PrimaryTransport isPlaying={isPlaying} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} />
+      </div>
+
+      <div className="hidden items-center gap-3.5 p-3 pr-3.5 sm:flex">
+        <div className="size-[66px] shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-white/20"><img src={track.thumbnail} alt={`${track.title} artwork`} loading="eager" className="h-full w-full object-cover object-center" /></div>
+        <div className="min-w-0 flex-1"><TrackDetails track={track} /><div className="mt-1.5"><SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} disabled={!isReady} /><div className="mt-1 text-left text-[10px] tabular-nums text-white/60">{formatTime(currentTime)} / {track.duration}</div></div></div>
+        <DesktopTransport isPlaying={isPlaying} isRepeating={isRepeating} isShuffling={isShuffling} disabled={!isReady} onPrevious={onPrevious} onToggle={onToggle} onNext={onNext} onRepeat={onRepeat} onShuffle={onShuffle} />
+      </div>
+
+      <div className="flex divide-x divide-white/10 border-t border-white/10 sm:hidden">
+        <button type="button" onClick={onShuffle} aria-label={isShuffling ? "Shuffle on" : "Shuffle off"} aria-pressed={isShuffling} className={`${mobileAction} ${isShuffling ? "bg-white/[0.08] text-white" : ""}`}><Shuffle className="size-4" strokeWidth={2.2} /><span className="whitespace-nowrap text-[11px]">Shuffle</span></button>
+        <button type="button" onClick={onRepeat} aria-label={isRepeating ? "Repeat on" : "Repeat off"} aria-pressed={isRepeating} className={`${mobileAction} ${isRepeating ? "bg-white/[0.08] text-white" : ""}`}><Repeat className="size-4" strokeWidth={2.2} /><span className="whitespace-nowrap text-[11px]">Repeat</span></button>
+        <button type="button" onClick={onDhak} aria-label="Select Dhak" aria-pressed={isDhakActive} className={`${mobileAction} ${isDhakActive ? "bg-white/[0.08] text-white" : ""}`}><Music2 className="size-4" strokeWidth={2.2} /><span className="whitespace-nowrap text-[11px]">Dhak</span></button>
       </div>
     </div>
   );
 }
 
-type PlaylistModalProps = {
-  currentTrackIndex: number;
-  isOpen: boolean;
-  isReady: boolean;
-  metadataByVideoId: Record<string, PlaylistMetadata>;
-  nowPlaying: NowPlaying | null;
-  onClose: () => void;
-  onSelectTrack: (index: number) => void;
-  playlist: Playlist;
-  queueVideoIds: string[];
-};
+function PlaylistChips({ activeIndex, onChange, onOpenPlaylist }: { activeIndex: number; onChange: (index: number) => void; onOpenPlaylist: () => void }) {
+  return <div className="mb-3 flex justify-center"><div className="flex items-center gap-2" role="tablist" aria-label="Playlists">{PLAYLISTS.map((playlist, index) => <button key={playlist.id} type="button" role="tab" aria-selected={activeIndex === index} onClick={() => { onChange(index); if (playlist.id === "pujo-radio") onOpenPlaylist(); }} className={`${CHIP_GLASS} rounded-full px-4 py-2 text-[11px] font-semibold tracking-normal transition hover:border-white/40 hover:bg-white/[0.16] ${activeIndex === index ? "text-white" : "text-white/70"}`}>{playlist.label}</button>)}</div></div>;
+}
 
-function PlaylistModal({
-  currentTrackIndex,
-  isOpen,
-  isReady,
-  metadataByVideoId,
-  nowPlaying,
-  onClose,
-  onSelectTrack,
-  playlist,
-  queueVideoIds,
-}: PlaylistModalProps) {
+type PlaylistModalProps = { currentTrackIndex: number; isOpen: boolean; onClose: () => void; onSelectTrack: (index: number) => void };
+
+const PlaylistModal = memo(function PlaylistModal({ currentTrackIndex, isOpen, onClose, onSelectTrack }: PlaylistModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-
   useEffect(() => {
     if (!isOpen) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
     window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", handleKeyDown); };
   }, [isOpen, onClose]);
 
   if (!isOpen || typeof document === "undefined") return null;
-
-  const rows = getPlaylistRows(playlist, queueVideoIds, metadataByVideoId);
-
   return createPortal(
-    <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4 max-[520px]:p-3"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="playlist-dialog-title"
-    >
-      <button
-        type="button"
-        className="animate-overlay-fade-in absolute inset-0 cursor-default border-0 bg-black/[0.65] backdrop-blur-[18px] [-webkit-backdrop-filter:blur(18px)]"
-        aria-label="Close playlist"
-        onClick={onClose}
-      />
-
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 max-[520px]:p-3" role="dialog" aria-modal="true" aria-labelledby="playlist-dialog-title">
+      <button type="button" className="animate-overlay-fade-in absolute inset-0 cursor-default border-0 bg-black/[0.65] backdrop-blur-[18px] [-webkit-backdrop-filter:blur(18px)]" aria-label="Close playlist" onClick={onClose} />
       <section className="playlist-dialog-glass animate-overlay-scale-in relative flex max-h-[85dvh] w-[min(640px,calc(100vw-32px))] flex-col overflow-hidden rounded-[32px] max-[520px]:max-h-[82dvh] max-[520px]:w-[calc(100vw-24px)] max-[520px]:rounded-[26px]">
-        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.10] px-6 py-[18px] max-[520px]:px-[18px] max-[520px]:py-4">
-          <h2
-            id="playlist-dialog-title"
-            className="text-[13px] font-extrabold uppercase tracking-[0.22em] text-white/70"
-          >
-            Playlists
-          </h2>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            onClick={onClose}
-            aria-label="Close playlist"
-            className="grid size-9 place-items-center rounded-full border-0 bg-transparent text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <X className="size-[18px]" strokeWidth={1.8} />
-          </button>
-        </header>
-
+        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.10] px-6 py-[18px] max-[520px]:px-[18px] max-[520px]:py-4"><h2 id="playlist-dialog-title" className="text-[13px] font-extrabold uppercase tracking-[0.22em] text-white/70">Playlists</h2><button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close playlist" className="grid size-9 place-items-center rounded-full border-0 bg-transparent text-white/70 transition-colors hover:bg-white/10 hover:text-white"><X className="size-[18px]" strokeWidth={1.8} /></button></header>
         <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 max-[520px]:px-3 max-[520px]:pb-3">
-          <div className="grid shrink-0 grid-cols-3 gap-2" role="tablist" aria-label="Playlist categories">
-            {[
-              { label: "Durga Puja", disabled: false },
-              { label: "Mahalaya", disabled: true },
-              { label: "Mahalaya Songs", disabled: true },
-            ].map((tab) => (
-              <button
-                key={tab.label}
-                type="button"
-                role="tab"
-                aria-selected={!tab.disabled}
-                disabled={tab.disabled}
-                className={`min-w-0 rounded-full px-2 py-2 text-[11px] font-extrabold uppercase tracking-[0.04em] transition-colors max-[420px]:text-[10px] ${
-                  tab.disabled
-                    ? "cursor-default bg-transparent text-white/45"
-                    : "bg-white/[0.16] text-white"
-                }`}
-              >
-                <span className="block truncate">{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <p className="shrink-0 px-1 pb-3 pt-3 text-[12px] font-medium text-white/50 max-[520px]:text-[11px]">
-            The main curated Durga Puja playlist.
-          </p>
-
-          <div className="playlist-modal-scrollbar min-h-0 flex-1 overflow-y-auto pr-1" aria-live="polite">
-            {rows.length > 0 ? (
-              <div className="space-y-1">
-                {rows.map((track, index) => {
-                  const isActive =
-                    index === currentTrackIndex || nowPlaying?.videoId === track.videoId;
-                  const indexLabel = String(index + 1).padStart(2, "0");
-
-                  return (
-                    <button
-                      key={`${track.videoId}-${index}`}
-                      type="button"
-                      disabled={!isReady}
-                      onClick={() => onSelectTrack(index)}
-                      aria-label={`Play ${track.title}`}
-                      aria-current={isActive ? "true" : undefined}
-                      className={`group flex w-full items-center gap-3 rounded-[18px] border-0 px-3 py-2.5 text-left transition-colors disabled:cursor-wait disabled:opacity-60 ${
-                        isActive ? "bg-white/[0.12]" : "bg-transparent hover:bg-white/[0.08]"
-                      }`}
-                    >
-                      <span
-                        className={`w-7 shrink-0 text-right text-[12px] font-semibold tabular-nums ${
-                          isActive ? "text-[#f1d449]" : "text-white/45"
-                        }`}
-                      >
-                        {indexLabel}
-                      </span>
-                      <img
-                        src={`https://img.youtube.com/vi/${track.videoId}/hqdefault.jpg`}
-                        alt=""
-                        loading="lazy"
-                        className="size-11 shrink-0 rounded-[9px] object-cover object-center shadow-[0_7px_16px_rgba(0,0,0,0.2)]"
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span
-                          className={`block truncate text-[13px] font-bold ${
-                            isActive ? "text-[#f1d449]" : "text-white"
-                          }`}
-                        >
-                          {track.title}
-                        </span>
-                        <span className="mt-0.5 block truncate text-[11px] font-medium text-white/[0.58]">
-                          {track.channelName}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-[11px] font-medium tabular-nums text-white/[0.42] max-[379px]:hidden">
-                        {track.duration > 0 ? formatTime(track.duration) : "--:--"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="grid min-h-40 place-items-center px-6 text-center">
-                <p className="text-[12px] font-medium leading-relaxed text-white/55">
-                  {isReady ? "Loading the Pujo Radio playlist…" : "Preparing the Pujo Radio playlist…"}
-                </p>
-              </div>
-            )}
-          </div>
+          <div className="grid shrink-0 grid-cols-3 gap-2" role="tablist" aria-label="Playlist categories">{[{ label: "Durga Puja", disabled: false }, { label: "Mahalaya", disabled: true }, { label: "Mahalaya Songs", disabled: true }].map((tab) => <button key={tab.label} type="button" role="tab" aria-selected={!tab.disabled} disabled={tab.disabled} className={`min-w-0 rounded-full px-2 py-2 text-[11px] font-extrabold uppercase tracking-[0.04em] transition-colors max-[420px]:text-[10px] ${tab.disabled ? "cursor-default bg-transparent text-white/45" : "bg-white/[0.16] text-white"}`}><span className="block truncate">{tab.label}</span></button>)}</div>
+          <p className="shrink-0 px-1 pb-3 pt-3 text-[12px] font-medium text-white/50 max-[520px]:text-[11px]">The main curated Durga Puja playlist.</p>
+          <div className="playlist-modal-scrollbar min-h-0 flex-1 overflow-y-auto pr-1"><div className="space-y-1">{PUJO_PLAYLIST.map((track, index) => {
+            const isActive = index === currentTrackIndex;
+            return <button key={track.videoId} type="button" onClick={() => onSelectTrack(index)} aria-label={`Play ${track.title}`} aria-current={isActive ? "true" : undefined} className={`group flex w-full items-center gap-3 rounded-[18px] border-0 px-3 py-2.5 text-left transition-colors ${isActive ? "bg-white/[0.12]" : "bg-transparent hover:bg-white/[0.08]"}`}>
+              <span className={`w-7 shrink-0 text-right text-[12px] font-semibold tabular-nums ${isActive ? "text-[#f1d449]" : "text-white/45"}`}>{String(index + 1).padStart(2, "0")}</span>
+              <img src={track.thumbnail} alt="" loading={isActive ? "eager" : "lazy"} className="size-11 shrink-0 rounded-[9px] object-cover object-center shadow-[0_7px_16px_rgba(0,0,0,0.2)]" />
+              <span className="min-w-0 flex-1"><span className={`block truncate text-[13px] font-bold ${isActive ? "text-[#f1d449]" : "text-white"}`}>{track.title}</span><span className="mt-0.5 block truncate text-[11px] font-medium text-white/[0.58]">{track.channelName}</span></span>
+              <span className="shrink-0 text-[11px] font-medium tabular-nums text-white/[0.42] max-[379px]:hidden">{track.duration}</span>
+            </button>;
+          })}</div></div>
         </div>
       </section>
     </div>,
     document.body,
   );
-}
+});
 
 export function Player() {
   const [playlistIndex, setPlaylistIndex] = useState(0);
@@ -534,170 +198,97 @@ export function Player() {
   const [isRepeating, setIsRepeating] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(APPROVED_YOUTUBE_PLAYLIST.startIndex);
-  const [playlistQueue, setPlaylistQueue] = useState<string[]>([]);
-  const [metadataByVideoId, setMetadataByVideoId] = useState<Record<string, PlaylistMetadata>>({});
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const playerHostRef = useRef<HTMLDivElement | null>(null);
+  const currentTrackIndexRef = useRef(0);
   const playlistLoadedRef = useRef(false);
-  const nowPlayingRef = useRef<NowPlaying | null>(null);
   const shouldResumeRef = useRef(false);
+  const isRepeatingRef = useRef(false);
+  const isShufflingRef = useRef(false);
+  const currentTrack = PUJO_PLAYLIST[currentTrackIndex];
+  const duration = durationToSeconds(currentTrack.duration);
 
-  const syncFromPlayer = useCallback(() => {
+  const loadTrack = useCallback((index: number, autoplay: boolean) => {
+    const normalizedIndex = ((index % PUJO_PLAYLIST.length) + PUJO_PLAYLIST.length) % PUJO_PLAYLIST.length;
+    const track = PUJO_PLAYLIST[normalizedIndex];
+    currentTrackIndexRef.current = normalizedIndex;
+    setCurrentTrackIndex(normalizedIndex);
+    setCurrentTime(0);
+    shouldResumeRef.current = autoplay;
     const player = playerRef.current;
-    if (!player) return;
-
-    const nextNowPlaying = readNowPlaying(player);
-    nowPlayingRef.current = nextNowPlaying;
-    setNowPlaying(nextNowPlaying);
-    const nextDuration = player.getDuration() || 0;
-    setCurrentTime(player.getCurrentTime() || 0);
-    setDuration(nextDuration);
-
-    const nextQueue = player.getPlaylist();
-    if (Array.isArray(nextQueue) && nextQueue.length > 0) setPlaylistQueue(nextQueue);
-
-    const nextTrackIndex = player.getPlaylistIndex();
-    if (Number.isFinite(nextTrackIndex) && nextTrackIndex >= 0) {
-      setCurrentTrackIndex(nextTrackIndex);
-    }
-
-    if (nextNowPlaying.videoId) {
-      setMetadataByVideoId((current) => {
-        const previous = current[nextNowPlaying.videoId];
-        if (
-          previous?.title === nextNowPlaying.title &&
-          previous.channelName === nextNowPlaying.channelName &&
-          previous.duration === nextDuration
-        ) {
-          return current;
-        }
-
-        return {
-          ...current,
-          [nextNowPlaying.videoId]: {
-            ...nextNowPlaying,
-            duration: nextDuration,
-          },
-        };
-      });
-    }
+    if (!player) { setIsPlaying(false); return; }
+    playlistLoadedRef.current = true;
+    if (autoplay) { player.loadVideoById(track.videoId); setIsPlaying(true); }
+    else { player.cueVideoById(track.videoId); setIsPlaying(false); }
   }, []);
 
-  const playAfterQueueMove = useCallback(() => {
-    window.setTimeout(() => {
-      syncFromPlayer();
-      if (shouldResumeRef.current) playerRef.current?.playVideo();
-    }, 250);
-  }, [syncFromPlayer]);
+  const syncFromPlayer = useCallback(() => {
+    const maxDuration = durationToSeconds(PUJO_PLAYLIST[currentTrackIndexRef.current].duration);
+    setCurrentTime(Math.min(playerRef.current?.getCurrentTime() ?? 0, maxDuration));
+  }, []);
 
   const next = useCallback(() => {
-    const player = playerRef.current;
-    if (!player) return;
-
-    shouldResumeRef.current = isPlaying;
-    player.nextVideo();
-    setCurrentTime(0);
-    playAfterQueueMove();
-  }, [isPlaying, playAfterQueueMove]);
+    const index = currentTrackIndexRef.current;
+    loadTrack(isShufflingRef.current ? getRandomTrackIndex(index) : (index + 1) % PUJO_PLAYLIST.length, isPlaying);
+  }, [isPlaying, loadTrack]);
 
   const previous = useCallback(() => {
-    const player = playerRef.current;
-    if (!player) return;
-
-    if (currentTime > 4) {
-      player.seekTo(0, true);
-      setCurrentTime(0);
-      return;
-    }
-
-    shouldResumeRef.current = isPlaying;
-    player.previousVideo();
-    setCurrentTime(0);
-    playAfterQueueMove();
-  }, [currentTime, isPlaying, playAfterQueueMove]);
+    if (playerRef.current && currentTime > 4) { playerRef.current.seekTo(0, true); setCurrentTime(0); return; }
+    const index = currentTrackIndexRef.current;
+    loadTrack(isShufflingRef.current ? getRandomTrackIndex(index) : (index - 1 + PUJO_PLAYLIST.length) % PUJO_PLAYLIST.length, isPlaying);
+  }, [currentTime, isPlaying, loadTrack]);
 
   useEffect(() => {
     if (!playerHostRef.current) return;
     let cancelled = false;
     let instance: YouTubePlayer | null = null;
-
     setIsReady(false);
-    setNowPlaying(null);
     setCurrentTime(0);
-    setDuration(0);
-    setCurrentTrackIndex(APPROVED_YOUTUBE_PLAYLIST.startIndex);
-    setPlaylistQueue([]);
     playlistLoadedRef.current = false;
 
     loadYouTubeApi().then(() => {
       if (cancelled || !window.YT || !playerHostRef.current) return;
-
       instance = new window.YT.Player(playerHostRef.current, {
-        videoId: APPROVED_YOUTUBE_PLAYLIST.startVideoId,
+        videoId: PUJO_PLAYLIST[0].videoId,
         width: 0,
         height: 0,
-        playerVars: {
-          index: APPROVED_YOUTUBE_PLAYLIST.startIndex,
-          list: APPROVED_YOUTUBE_PLAYLIST.id,
-          listType: "playlist",
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0,
-        },
+        playerVars: { modestbranding: 1, playsinline: 1, rel: 0 },
         events: {
           onReady: ({ target }) => {
             playerRef.current = target;
-            target.cuePlaylist({
-              listType: "playlist",
-              list: APPROVED_YOUTUBE_PLAYLIST.id,
-              index: APPROVED_YOUTUBE_PLAYLIST.startIndex,
-            });
+            const track = PUJO_PLAYLIST[currentTrackIndexRef.current];
+            playlistLoadedRef.current = true;
+            if (shouldResumeRef.current) target.loadVideoById(track.videoId); else target.cueVideoById(track.videoId);
             setIsReady(true);
-            window.setTimeout(syncFromPlayer, 250);
-            window.setTimeout(syncFromPlayer, 900);
           },
-          onStateChange: ({ data, target }) => {
+          onStateChange: ({ data }) => {
             syncFromPlayer();
-            if (data === 1) {
-              shouldResumeRef.current = true;
-              setIsPlaying(true);
-              setDuration(target.getDuration() || 0);
-            } else if (data === 2) {
-              shouldResumeRef.current = false;
-              setIsPlaying(false);
-            } else if (data === 0) {
-              setIsPlaying(false);
-              shouldResumeRef.current = true;
-              target.nextVideo();
-              playAfterQueueMove();
+            if (data === 1) { shouldResumeRef.current = true; setIsPlaying(true); }
+            else if (data === 2) { shouldResumeRef.current = false; setIsPlaying(false); }
+            else if (data === 0) {
+              const index = currentTrackIndexRef.current;
+              if (isShufflingRef.current) loadTrack(getRandomTrackIndex(index), true);
+              else if (index < PUJO_PLAYLIST.length - 1) loadTrack(index + 1, true);
+              else if (isRepeatingRef.current) loadTrack(0, true);
+              else { shouldResumeRef.current = false; setCurrentTime(durationToSeconds(PUJO_PLAYLIST[index].duration)); setIsPlaying(false); }
             }
           },
-          onError: ({ data, target }) => {
-            const videoId =
-              target.getVideoData()?.video_id ||
-              nowPlayingRef.current?.videoId ||
-              APPROVED_YOUTUBE_PLAYLIST.startVideoId;
-            setIsPlaying(false);
-            trackEvent("youtube_playlist_error", { code: data, videoId, playlistId: APPROVED_YOUTUBE_PLAYLIST.id });
+          onError: ({ data }) => {
+            const index = currentTrackIndexRef.current;
+            const track = PUJO_PLAYLIST[index];
             const shouldContinue = shouldResumeRef.current;
-            target.nextVideo();
-            if (shouldContinue) playAfterQueueMove();
-            else window.setTimeout(syncFromPlayer, 250);
+            trackEvent("youtube_playlist_error", { code: data, videoId: track.videoId, playlistId: APPROVED_YOUTUBE_PLAYLIST.id });
+            if (index < PUJO_PLAYLIST.length - 1 || isRepeatingRef.current || isShufflingRef.current) loadTrack(isShufflingRef.current ? getRandomTrackIndex(index) : (index + 1) % PUJO_PLAYLIST.length, shouldContinue);
+            else setIsPlaying(false);
           },
         },
       });
     });
 
-    return () => {
-      cancelled = true;
-      if (playerRef.current === instance) playerRef.current = null;
-      instance?.destroy();
-    };
-  }, [playAfterQueueMove, syncFromPlayer]);
+    return () => { cancelled = true; if (playerRef.current === instance) playerRef.current = null; instance?.destroy(); };
+  }, [loadTrack, syncFromPlayer]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -705,145 +296,28 @@ export function Player() {
     return () => window.clearInterval(timer);
   }, [isPlaying, syncFromPlayer]);
 
-  const switchPlaylist = (index: number) => {
-    setPlaylistIndex(index);
-  };
-
   const closePlaylist = useCallback(() => setIsPlaylistOpen(false), []);
-
-  const openPlaylist = useCallback(() => {
-    syncFromPlayer();
-    setIsPlaylistOpen(true);
-  }, [syncFromPlayer]);
-
-  const selectPlaylistTrack = useCallback(
-    (index: number) => {
-      const player = playerRef.current;
-      if (!player || !isReady) return;
-
-      shouldResumeRef.current = true;
-      playlistLoadedRef.current = true;
-      setCurrentTrackIndex(index);
-      setCurrentTime(0);
-      setIsPlaying(true);
-
-      const queuedVideoIds = player.getPlaylist();
-      const selectedVideoId = queuedVideoIds?.[index] ?? PLAYLISTS[0].tracks[index]?.videoId;
-      const selectedMetadata = selectedVideoId ? metadataByVideoId[selectedVideoId] : undefined;
-      if (selectedVideoId) {
-        setNowPlaying(
-          selectedMetadata ?? {
-            channelName: "Pujo Radio",
-            title: `Pujo Radio Track ${String(index + 1).padStart(2, "0")}`,
-            videoId: selectedVideoId,
-          },
-        );
-      }
-
-      if (queuedVideoIds && queuedVideoIds.length > 0) {
-        player.playVideoAt(index);
-      } else {
-        player.loadPlaylist({
-          listType: "playlist",
-          list: APPROVED_YOUTUBE_PLAYLIST.id,
-          index,
-        });
-      }
-
-      player.setShuffle(isShuffling);
-      player.setLoop(isRepeating);
-      window.setTimeout(syncFromPlayer, 250);
-      window.setTimeout(syncFromPlayer, 700);
-
-      if (window.matchMedia("(max-width: 767px)").matches) closePlaylist();
-    },
-    [closePlaylist, isReady, isRepeating, isShuffling, metadataByVideoId, syncFromPlayer],
-  );
-
+  const openPlaylist = useCallback(() => setIsPlaylistOpen(true), []);
+  const selectPlaylistTrack = useCallback((index: number) => { loadTrack(index, true); if (window.matchMedia("(max-width: 767px)").matches) closePlaylist(); }, [closePlaylist, loadTrack]);
   const togglePlayback = () => {
     const player = playerRef.current;
     if (!player) return;
-
-    if (isPlaying) {
-      shouldResumeRef.current = false;
-      player.pauseVideo();
-    } else {
-      shouldResumeRef.current = true;
-      if (!playlistLoadedRef.current) {
-        playlistLoadedRef.current = true;
-        player.loadPlaylist({
-          listType: "playlist",
-          list: APPROVED_YOUTUBE_PLAYLIST.id,
-          index: APPROVED_YOUTUBE_PLAYLIST.startIndex,
-        });
-        player.setShuffle(isShuffling);
-        player.setLoop(isRepeating);
-      } else {
-        player.playVideo();
-      }
-    }
+    if (isPlaying) { shouldResumeRef.current = false; player.pauseVideo(); }
+    else if (!playlistLoadedRef.current) loadTrack(currentTrackIndexRef.current, true);
+    else { shouldResumeRef.current = true; player.playVideo(); }
   };
-
-  const seek = useCallback((time: number) => {
-    playerRef.current?.seekTo(time, true);
-    setCurrentTime(time);
-  }, []);
-
-  const toggleShuffle = () => {
-    const nextValue = !isShuffling;
-    setIsShuffling(nextValue);
-    playerRef.current?.setShuffle(nextValue);
-  };
-
-  const toggleRepeat = () => {
-    const nextValue = !isRepeating;
-    setIsRepeating(nextValue);
-    playerRef.current?.setLoop(nextValue);
-  };
-
+  const seek = useCallback((time: number) => { playerRef.current?.seekTo(time, true); setCurrentTime(time); }, []);
+  const toggleShuffle = () => { const value = !isShufflingRef.current; isShufflingRef.current = value; setIsShuffling(value); };
+  const toggleRepeat = () => { const value = !isRepeatingRef.current; isRepeatingRef.current = value; setIsRepeating(value); };
   const playlist = PLAYLISTS[playlistIndex];
 
   return (
     <div className="pointer-events-auto w-full">
-      <div className="pointer-events-none absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden" aria-hidden="true">
-        <div ref={playerHostRef} />
-      </div>
-
-      <div className="mb-3 text-center drop-shadow-sm">
-        <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-pujo-light/95">{playlist.eyebrow}</p>
-      </div>
-
-      <PlaylistChips
-        activeIndex={playlistIndex}
-        onChange={switchPlaylist}
-        onOpenPlaylist={openPlaylist}
-      />
-      <PlaylistModal
-        currentTrackIndex={currentTrackIndex}
-        isOpen={isPlaylistOpen}
-        isReady={isReady}
-        metadataByVideoId={metadataByVideoId}
-        nowPlaying={nowPlaying}
-        onClose={closePlaylist}
-        onSelectTrack={selectPlaylistTrack}
-        playlist={PLAYLISTS[0]}
-        queueVideoIds={playlistQueue}
-      />
-      <PlayerCard
-        currentTime={currentTime}
-        duration={duration}
-        isPlaying={isPlaying}
-        isRepeating={isRepeating}
-        isReady={isReady}
-        isShuffling={isShuffling}
-        nowPlaying={nowPlaying}
-        onPrevious={previous}
-        onToggle={togglePlayback}
-        onNext={next}
-        onSeek={seek}
-        onRepeat={toggleRepeat}
-        onShuffle={toggleShuffle}
-      />
+      <div className="pointer-events-none absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden" aria-hidden="true"><div ref={playerHostRef} /></div>
+      <div className="mb-3 text-center drop-shadow-sm"><p className="text-[9px] font-bold uppercase tracking-[0.24em] text-pujo-light/95">{playlist.eyebrow}</p></div>
+      <PlaylistChips activeIndex={playlistIndex} onChange={setPlaylistIndex} onOpenPlaylist={openPlaylist} />
+      <PlaylistModal currentTrackIndex={currentTrackIndex} isOpen={isPlaylistOpen} onClose={closePlaylist} onSelectTrack={selectPlaylistTrack} />
+      <PlayerCard currentTime={currentTime} duration={duration} isDhakActive={playlistIndex === 1} isPlaying={isPlaying} isRepeating={isRepeating} isReady={isReady} isShuffling={isShuffling} track={currentTrack} onDhak={() => setPlaylistIndex(1)} onPrevious={previous} onToggle={togglePlayback} onNext={next} onSeek={seek} onRepeat={toggleRepeat} onShuffle={toggleShuffle} disabled={!isReady} />
     </div>
   );
 }

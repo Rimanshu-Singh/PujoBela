@@ -99,7 +99,7 @@ PujoBela uses different media by viewport size:
 | Viewport | Asset | Behavior |
 | --- | --- | --- |
 | Mobile | `public/bg/scene-tall.png` | Static 9:16 artwork for faster loading and lower battery usage. |
-| Desktop | `public/bg/scene-wide.png` | Full-screen wide artwork with centered, cover-style cropping. |
+| Desktop | `public/bg/scene-wide-heading.png` | Full-screen wide artwork with the Bengali festive heading and centered, cover-style cropping. |
 
 Both images are delivered through a responsive `<picture>` element. The artwork remains underneath the dark overlay, texture layers, and all interactive UI.
 

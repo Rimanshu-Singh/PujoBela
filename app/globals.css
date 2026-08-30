@@ -58,10 +58,44 @@ a:focus-visible,
 
 .hero-bg-image {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100vw;
+  height: 100vh;
   height: 100dvh;
   object-fit: cover;
-  object-position: center top;
+  object-position: center;
+}
+
+.hero-bg-image-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  transition: opacity 750ms ease-in-out;
+  will-change: opacity;
+}
+
+.hero-bg-title {
+  position: absolute;
+  top: clamp(108px, 17dvh, 175px);
+  left: 50%;
+  z-index: 1;
+  display: block;
+  width: min(62vw, 270px);
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .hero-bg-title {
+    top: clamp(100px, 14dvh, 165px);
+    width: clamp(300px, 25vw, 440px);
+  }
 }
 
 .site-background-overlay {

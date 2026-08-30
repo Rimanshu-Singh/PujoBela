@@ -3,14 +3,30 @@
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
+function createTabId() {
+  if (typeof window.crypto?.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+
+  if (typeof window.crypto?.getRandomValues === "function") {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
+  }
+
+  return `tab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function useActiveListeners() {
   const [activeListeners, setActiveListeners] = useState(1);
 
   const supabase = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-      console.log("Supabase URL:", url);
-      console.log("Supabase Key:", key);
     if (!url || !key) return null;
 
     return createClient(url, key, {
@@ -26,7 +42,7 @@ export function useActiveListeners() {
       return;
     }
 
-    const tabId = window.crypto.randomUUID();
+    const tabId = createTabId();
     const channel = supabase.channel("pujobela-active-listeners", {
       config: {
         presence: {
