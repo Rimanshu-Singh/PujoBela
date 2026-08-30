@@ -14,10 +14,11 @@ export default function Home() {
         aria-hidden="true"
       />
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-white/10 via-transparent to-[rgba(120,53,20,0.1)]" aria-hidden="true" />
+      <div className="site-background-overlay" aria-hidden="true" />
 
       <TopBar />
 
-      <h1 className="pointer-events-none fixed left-1/2 top-[20dvh] z-0 w-[min(82vw,22rem)] -translate-x-1/2 text-center text-[clamp(2.65rem,13vw,4rem)] font-bold leading-[0.92] tracking-[-0.04em] text-[#ffd24f] drop-shadow-[0_3px_10px_rgba(111,52,10,0.18)] md:hidden">
+      <h1 className="pointer-events-none fixed left-1/2 top-[20dvh] z-[2] w-[min(82vw,22rem)] -translate-x-1/2 text-center text-[clamp(2.65rem,13vw,4rem)] font-bold leading-[0.92] tracking-[-0.04em] text-[#ffd24f] drop-shadow-[0_3px_10px_rgba(111,52,10,0.18)] md:hidden">
         <span className="block">পুজো</span>
         <span className="block">আসছে</span>
       </h1>

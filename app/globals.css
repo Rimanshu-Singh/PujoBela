@@ -53,6 +53,19 @@ a:focus-visible,
   background-repeat: no-repeat;
 }
 
+.site-background-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0.16) 0%,
+    rgb(0 0 0 / 0.21) 45%,
+    rgb(0 0 0 / 0.24) 100%
+  );
+  pointer-events: none;
+}
+
 .glass-panel {
   border: 1px solid rgb(255 255 255 / 0.1);
   background-image: linear-gradient(to bottom, rgb(255 255 255 / 0.15), rgb(255 255 255 / 0.055));
