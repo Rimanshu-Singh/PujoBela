@@ -9,7 +9,7 @@ PujoBela is an immersive Durga Puja radio experience built for long afternoons, 
 - YouTube playlist playback with play/pause, previous/next, seeking, shuffle, and repeat.
 - Live track title, channel name, artwork, elapsed time, and duration.
 - Responsive static artwork optimized for desktop and mobile compositions.
-- Kolkata time, active-listener display, and Durga Puja countdown.
+- Kolkata time, Redis-backed active-listener presence, and Durga Puja countdown.
 - YouTube Music playlist shortcuts.
 - Responsive creator, support, and feedback dialogs, with feedback saved to Google Forms.
 - Keyboard-accessible controls, visible focus states, Escape-to-close dialogs, and reduced-motion support.
@@ -22,6 +22,7 @@ PujoBela is an immersive Durga Puja radio experience built for long afternoons, 
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/) 4
 - [Lucide React](https://lucide.dev/)
+- [Upstash Redis](https://upstash.com/redis) for anonymous listener presence
 - YouTube IFrame Player API
 - Vercel Analytics and Speed Insights
 
@@ -59,12 +60,20 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-No environment variables are required. The feedback dialog submits directly to the configured public Google Form and records a submission event through Vercel Analytics.
+The feedback dialog submits directly to the configured public Google Form and records a submission event through Vercel Analytics. Active-listener presence uses the following server-only Upstash Redis variables:
+
+```bash
+UPSTASH_REDIS_REST_URL=your_upstash_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
+```
+
+Connect an Upstash Redis database through the Vercel Marketplace to have these credentials injected into the deployment. Legacy `KV_REST_API_URL` and `KV_REST_API_TOKEN` names are supported too. Without Redis credentials, the presence endpoint safely returns a listener count of `1`.
 
 ## Project structure
 
 ```text
 app/
+  api/presence/route.ts Presence heartbeat and Redis listener count
   globals.css          Global theme, responsive layout, and glass effects
   layout.tsx           Metadata, viewport settings, and Vercel integrations
   page.tsx             Background layers and primary page composition
@@ -73,6 +82,8 @@ components/
   icons.tsx            Small reusable SVG icon components
   player.tsx           YouTube player, transport controls, seek bar, and UI
   top-bar.tsx          Clock, listener status, playlist links, and dialogs
+hooks/
+  use-active-listeners.ts Per-tab ID and 20-second presence heartbeat
 lib/
   tracks.ts            YouTube playlist and local playlist configuration
 public/
@@ -121,7 +132,8 @@ The YouTube IFrame API is loaded only in the browser. Audio playback begins afte
 | --- | --- |
 | Theme, glass styling, animations | `app/globals.css` |
 | Page title and description | `app/layout.tsx` |
-| Puja date and displayed listener count | `components/top-bar.tsx` |
+| Puja date and listener display | `components/top-bar.tsx` |
+| Presence heartbeat timing | `hooks/use-active-listeners.ts` |
 | Creator name, Instagram, email, and image | `components/top-bar.tsx` |
 | Support/payment destination | `SUPPORT_URL` in `components/top-bar.tsx` |
 | Playlist ID and starting track | `lib/tracks.ts` |

@@ -9,6 +9,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.3",
     "@vercel/analytics": "latest",
     "@vercel/speed-insights": "latest",
     "lucide-react": "^1.35.0",

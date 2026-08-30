@@ -4,6 +4,7 @@ import { ArrowUpRight, Check, Coffee, Copy, Mail, Users, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { InstagramIcon } from "@/components/icons";
+import { useActiveListeners } from "@/hooks/use-active-listeners";
 
 const formatter = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata",
@@ -12,14 +13,13 @@ const formatter = new Intl.DateTimeFormat("en-IN", {
   hour12: true,
 });
 
-const ONLINE_USERS = 246;
 const DURGA_PUJA_DATE = new Date("2026-10-21T00:00:00+05:30");
 // TODO: Replace with actual Buy Me a Coffee / UPI / payment link
 const SUPPORT_URL = "#";
 const PLAYLIST_URL = "https://music.youtube.com/playlist?list=PLR949LBNtYuU&si=3zFEKUjp7ie3jkl5";
 const CREATOR_EMAIL = "rimanshupatel1@gmail.com";
 // TODO: Replace with Rimanshu Singh Instagram DP from @rimmu.1x
-const CREATOR_IMAGE = "/creator/rimanshu-singh-placeholder.svg";
+const CREATOR_IMAGE = "/creator/profile.jpg";
 
 function Clock() {
   const [now, setNow] = useState<Date | null>(null);
@@ -52,6 +52,7 @@ function Clock() {
 
 function CountdownPill() {
   const [days, setDays] = useState<number | null>(null);
+  const activeListeners = useActiveListeners();
 
   useEffect(() => {
     const update = () => {
@@ -68,15 +69,15 @@ function CountdownPill() {
     <div
       className="box-border flex h-11 shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/[0.07] px-3.5 text-sm font-medium text-white shadow-[0_6px_18px_rgba(0,0,0,0.08)] backdrop-blur-2xl backdrop-saturate-150"
       aria-live="polite"
-      aria-label={`${ONLINE_USERS} online, ${days ?? "unknown"} days until Durga Puja`}
-      title={`${ONLINE_USERS} online`}
+      aria-label={`${activeListeners} online, ${days ?? "unknown"} days until Durga Puja`}
+      title={`${activeListeners} online`}
     >
       <span className="relative flex size-2 shrink-0 items-center justify-center">
         <span className="animate-online-pulse absolute size-full rounded-full bg-green-400" />
         <span className="relative size-2 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]" />
       </span>
       <span className="ml-2 whitespace-nowrap tabular-nums">
-        {ONLINE_USERS} online
+        {activeListeners} online
       </span>
       <span className="mx-3 hidden h-4 w-0.5 shrink-0 rounded-full bg-white/20 sm:inline-block" aria-hidden="true" />
       <span className="hidden whitespace-nowrap text-white/70 sm:inline">
