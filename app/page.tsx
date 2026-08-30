@@ -7,7 +7,10 @@ const grain = `url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http:
 export default function Home() {
   return (
     <main className="relative isolate min-h-dvh w-screen overflow-hidden pb-[env(safe-area-inset-bottom)]">
-      <div className="hero-bg fixed inset-0 -z-20 min-h-dvh w-screen" aria-hidden="true" />
+      <picture className="hero-bg" aria-hidden="true">
+        <source media="(min-width: 768px)" srcSet="/bg/scene-wide.png" />
+        <img className="hero-bg-image" src="/bg/scene-tall.png" alt="" />
+      </picture>
       <div
         className="fixed inset-0 -z-10 bg-repeat opacity-20 mix-blend-overlay"
         style={{ backgroundImage: grain, backgroundSize: "180px 180px" }}

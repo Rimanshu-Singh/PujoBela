@@ -46,11 +46,22 @@ a:focus-visible,
 }
 
 .hero-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
   background-color: #a64f26;
-  background-image: url("/bg/scene-tall.png");
-  background-position: center top;
-  background-size: cover;
-  background-repeat: no-repeat;
+}
+
+.hero-bg-image {
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  object-fit: cover;
+  object-position: center top;
 }
 
 .site-background-overlay {
@@ -476,9 +487,8 @@ a:focus-visible,
 }
 
 @media (min-width: 768px) {
-  .hero-bg {
-    background-image: url("/bg/scene-wide.png");
-    background-position: center center;
+  .hero-bg-image {
+    object-position: center;
   }
 }
 
