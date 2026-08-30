@@ -14,7 +14,7 @@ export default function Home() {
         aria-hidden="true"
       />
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-white/10 via-transparent to-[rgba(120,53,20,0.1)]" aria-hidden="true" />
-      <div className="site-background-overlay" aria-hidden="true" />
+      <div className="site-background-overlay pujo-bg-overlay" aria-hidden="true" />
 
       <TopBar />
 

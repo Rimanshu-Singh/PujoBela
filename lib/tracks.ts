@@ -16,10 +16,10 @@ export type Playlist = {
 };
 
 export const APPROVED_YOUTUBE_PLAYLIST = {
-  id: "PLjzw5oKNnEDckdihqypaNh_Q0OzDs_7D3",
+  id: "PLR949LBNtYuU",
   startVideoId: "SFJeglBF5cg",
-  startIndex: 2,
-  source: "approved YouTube playlist",
+  startIndex: 0,
+  source: "https://www.youtube.com/playlist?list=PLR949LBNtYuU",
 };
 
 // Add a rights-cleared song with one line inside the appropriate `tracks` array:

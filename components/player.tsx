@@ -128,7 +128,7 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
       aria-valuenow={Math.round(currentTime)}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
-      className={`group relative h-[3px] w-full touch-none rounded-full bg-white/25 md:h-1 ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
+      className={`pujo-player-progress group relative h-[3px] w-full touch-none rounded-full bg-white/25 md:h-1 ${disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onKeyDown={(event) => {
@@ -139,7 +139,7 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
     >
       <span className="absolute inset-x-0 -inset-y-[10px]" aria-hidden="true" />
       <div
-        className="absolute inset-y-0 left-0 rounded-full bg-white/[0.92]"
+        className="pujo-player-progress-fill absolute inset-y-0 left-0 rounded-full bg-white/[0.92]"
         style={{ width: `${percent}%` }}
       />
       <span
@@ -163,7 +163,7 @@ type TransportProps = {
 };
 
 function Transport({ isPlaying, isRepeating, isShuffling, disabled, onPrevious, onToggle, onNext, onRepeat, onShuffle }: TransportProps) {
-  const utilityButton = "grid size-6 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30";
+  const utilityButton = "pujo-player-control grid size-6 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30";
 
   return (
     <div className="flex shrink-0 items-center justify-center gap-[5px] min-[380px]:gap-[7px] md:gap-[9px]">
@@ -191,7 +191,7 @@ function Transport({ isPlaying, isRepeating, isShuffling, disabled, onPrevious, 
         onClick={onToggle}
         disabled={disabled}
         aria-label={isPlaying ? "Pause" : "Play"}
-        className="grid size-[38px] place-items-center rounded-xl bg-white/[0.95] text-[#4a2a22] shadow-[0_8px_20px_rgba(40,20,14,0.22),inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+        className="pujo-player-main-button grid size-[38px] place-items-center rounded-xl bg-white/[0.95] text-[#4a2a22] shadow-[0_8px_20px_rgba(40,20,14,0.22),inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
       >
         {isPlaying ? <ModernPauseIcon className="size-[22px]" /> : <ModernPlayIcon className="size-[22px]" />}
       </button>
@@ -258,7 +258,7 @@ type PlayerCardProps = {
 
 function PlayerCard({ currentTime, duration, isPlaying, isRepeating, isReady, isShuffling, nowPlaying, onNext, onPrevious, onSeek, onRepeat, onShuffle, onToggle }: PlayerCardProps) {
   return (
-    <div className={`${PLAYER_GLASS} grid min-h-[82px] grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[20px] p-3 max-[379px]:grid-cols-[50px_minmax(0,1fr)_auto] max-[379px]:gap-2.5 max-[379px]:p-2.5 md:min-h-[100px] md:grid-cols-[58px_minmax(0,1fr)_auto] md:px-[15px] md:py-3`}>
+    <div className={`${PLAYER_GLASS} pujo-player-glass grid min-h-[82px] grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-[14px] rounded-[20px] p-3 max-[379px]:grid-cols-[50px_minmax(0,1fr)_auto] max-[379px]:gap-2.5 max-[379px]:p-2.5 md:min-h-[100px] md:grid-cols-[58px_minmax(0,1fr)_auto] md:px-[15px] md:py-3`}>
       <ArtworkSlot nowPlaying={nowPlaying} />
       <div className="min-w-0">
         <TrackDetails nowPlaying={nowPlaying} />

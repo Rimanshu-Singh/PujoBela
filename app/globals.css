@@ -155,7 +155,6 @@ a:focus-visible,
 .top-action-button:hover {
   color: white;
   opacity: 1;
-  transform: translateY(-1px);
 }
 
 .top-action-button:active {
@@ -427,6 +426,39 @@ a:focus-visible,
   50% { opacity: 0; }
 }
 
+@keyframes online-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0; transform: scale(2); }
+}
+
+.animate-online-pulse {
+  animation: online-pulse 1.8s ease-out infinite;
+}
+
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlay-scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-overlay-fade-in {
+  animation: overlay-fade-in 200ms ease-out both;
+}
+
+.animate-overlay-scale-in {
+  animation: overlay-scale-in 220ms ease-out both;
+}
+
 @keyframes creator-backdrop-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -511,10 +543,303 @@ a:focus-visible,
     animation: none;
   }
 
+  .animate-online-pulse {
+    animation: none;
+  }
+
+  .animate-overlay-fade-in,
+  .animate-overlay-scale-in {
+    animation: none;
+  }
+
   .creator-backdrop,
   .creator-dialog-backdrop,
   .creator-dialog,
   .support-card {
     animation: none;
+  }
+}
+
+/* PujoBela premium glass UI */
+
+.pujo-bg-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* Top time pill */
+.pujo-time-pill {
+  display: inline-flex;
+  align-items: center;
+  width: 155px;
+  min-height: 55px;
+  padding: 0 19px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(119, 72, 40, 0.82), rgba(91, 54, 33, 0.72));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(18px) saturate(155%);
+  -webkit-backdrop-filter: blur(18px) saturate(155%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 10px 28px rgba(38, 24, 16, 0.2);
+}
+
+/* Top-right user + coffee shared pill */
+.pujo-action-pill {
+  display: flex;
+  align-items: center;
+  min-width: 104px;
+  min-height: 55px;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: rgba(145, 197, 208, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 10px 28px rgba(28, 52, 56, 0.16);
+}
+
+.pujo-action-pill button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.92);
+  background: transparent;
+  border: 0;
+  transition: background-color 180ms ease, opacity 180ms ease, transform 180ms ease;
+}
+
+.pujo-action-pill button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  opacity: 1;
+}
+
+.pujo-listener-pill {
+  display: flex;
+  width: min(400px, calc(100vw - 32px));
+  min-height: 55px;
+  padding: 0 20px;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(145, 197, 208, 0.46);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 10px 28px rgba(28, 52, 56, 0.16);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pujo-listener-online {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  white-space: nowrap;
+}
+
+.pujo-listener-dot {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #00e978;
+  box-shadow: 0 0 12px rgba(0, 233, 120, 0.72);
+}
+
+.pujo-listener-divider {
+  width: 2px;
+  height: 23px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.pujo-time-pill .time-card-time {
+  gap: 8px;
+}
+
+.pujo-time-pill .time-card-primary {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.pujo-time-pill .time-card-meta {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.pujo-time-pill .clock-colon {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Music player glass */
+.pujo-player-glass {
+  background:
+    linear-gradient(135deg, rgba(170, 115, 105, 0.58), rgba(120, 82, 76, 0.46));
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  box-shadow:
+    0 18px 45px rgba(54, 28, 20, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(80, 40, 30, 0.12);
+}
+
+.pujo-player-control {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: rgba(255, 255, 255, 0.82);
+  background: transparent;
+  border: 0;
+}
+
+.pujo-player-main-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #4a2a22;
+  box-shadow:
+    0 8px 20px rgba(40, 20, 14, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.pujo-player-progress {
+  height: 3px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.pujo-player-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* Creator modal */
+.pujo-modal-backdrop {
+  background: rgba(0, 0, 0, 0.46);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+}
+
+.pujo-creator-modal {
+  position: relative;
+  overflow: hidden;
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 213, 140, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(18, 24, 24, 0.86), rgba(34, 24, 20, 0.88));
+  backdrop-filter: blur(36px) saturate(180%);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  box-shadow:
+    0 34px 120px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 190, 120, 0.08);
+}
+
+.pujo-creator-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%);
+}
+
+.pujo-creator-card {
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 18px 50px rgba(0, 0, 0, 0.24);
+}
+
+.pujo-email-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.84);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 767px) {
+  .pujo-time-pill {
+    width: auto;
+    min-width: 126px;
+    min-height: 48px;
+    padding: 0 14px;
+  }
+
+  .pujo-time-pill .time-card-time {
+    gap: 6px;
+  }
+
+  .pujo-time-pill .time-card-primary {
+    font-size: 14px;
+  }
+
+  .pujo-time-pill .time-card-meta {
+    font-size: 11px;
+  }
+
+  .pujo-action-pill {
+    min-width: 88px;
+    min-height: 48px;
+    padding: 0 13px;
+    gap: 14px;
+  }
+
+  .pujo-listener-pill {
+    width: calc(100vw - 32px);
+    min-height: 48px;
+    padding: 0 14px;
+    gap: 12px;
+    font-size: 12px;
+  }
+
+  .pujo-listener-online {
+    gap: 8px;
+  }
+
+  .pujo-listener-dot {
+    width: 9px;
+    height: 9px;
+  }
+
+  .pujo-listener-divider {
+    width: 1px;
+    height: 18px;
   }
 }
