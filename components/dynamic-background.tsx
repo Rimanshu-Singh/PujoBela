@@ -34,14 +34,10 @@ const BACKGROUND_IMAGES: Record<TimeOfDay, BackgroundSource> = {
   night: BACKGROUND_CONFIG.nightImage,
 };
 
-const KOLKATA_HOUR_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  hour: "2-digit",
-  hourCycle: "h23",
-  timeZone: "Asia/Kolkata",
-});
-
 export function getCurrentTimeOfDay(now = new Date()): TimeOfDay {
-  const hour = Number(KOLKATA_HOUR_FORMATTER.format(now));
+  // IST is always UTC+5:30 with no Daylight Saving Time
+  const istMillis = now.getTime() + 5.5 * 60 * 60 * 1000;
+  const hour = new Date(istMillis).getUTCHours();
 
   if (hour >= 5 && hour < 12) return "morning";
   if (hour >= 12 && hour < 17) return "afternoon";
@@ -74,21 +70,29 @@ export function DynamicBackground() {
       aria-hidden="true"
       data-background-image={`${backgroundImage.tall}|${backgroundImage.wide}`}
     >
-      {(Object.entries(BACKGROUND_IMAGES) as [TimeOfDay, BackgroundSource][]).map(([period, src]) => (
-        <picture
-          key={period}
-          className={`hero-bg-image-layer ${period === timeOfDay ? "opacity-100" : "opacity-0"}`}
-        >
-          <source media="(min-width: 768px)" srcSet={src.wide} />
-          <img
-            className="hero-bg-image"
-            src={src.tall}
-            alt=""
-            loading="eager"
-            fetchPriority={period === timeOfDay ? "high" : "low"}
-          />
-        </picture>
-      ))}
+      {(Object.entries(BACKGROUND_IMAGES) as [TimeOfDay, BackgroundSource][]).map(([period, src]) => {
+        const isActive = period === timeOfDay;
+        return (
+          <picture
+            key={period}
+            className={`hero-bg-image-layer ${isActive ? "opacity-100" : "opacity-0"}`}
+            style={{
+              opacity: isActive ? 1 : 0,
+              zIndex: isActive ? 0 : -1,
+              pointerEvents: isActive ? "auto" : "none",
+            }}
+          >
+            <source media="(min-width: 768px)" srcSet={src.wide} />
+            <img
+              className="hero-bg-image"
+              src={src.tall}
+              alt=""
+              loading="eager"
+              fetchPriority={isActive ? "high" : "low"}
+            />
+          </picture>
+        );
+      })}
       <img
         className="hero-bg-title"
         src="/bg/pujo-asche-title.png"
